@@ -2,4 +2,5 @@
 -------
 
 - re-introduced the types library for bioinformatics
+- travis-ci integration
 

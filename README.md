@@ -1,7 +1,14 @@
+# BIobaseTYpes
 
-BiobaseTypes
-(c) 2015, Christian Hoener zu Siederdissen
-Leipzig University, Leipzig, Germany
+[![Build Status](https://travis-ci.org/choener/BiobaseTypes.svg?branch=master)](https://travis-ci.org/choener/BiobaseTypes)
+
+A bunch of types in use in different modules.
+
+
+
+#### Contact
+
+Christian Hoener zu Siederdissen
 choener@bioinf.uni-leipzig.de
-LICENSE: BSD3
+Leipzig University, Leipzig, Germany
 
