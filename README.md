@@ -1,6 +1,6 @@
-# BIobaseTYpes
-
 [![Build Status](https://travis-ci.org/choener/BiobaseTypes.svg?branch=master)](https://travis-ci.org/choener/BiobaseTypes)
+
+# BiobaseTypes
 
 A bunch of types in use in different modules.
 
