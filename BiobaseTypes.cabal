@@ -14,6 +14,8 @@ tested-with:    GHC == 7.8.4, GHC == 7.10.1
 synopsis:       Collection of types for bioinformatics
 description:
                 Types used in a number of bioinformatics libraries.
+                .
+                <https://github.com/choener/BiobaseTypes/blob/master/README.md>
 
 
 
