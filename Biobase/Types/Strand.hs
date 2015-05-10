@@ -15,6 +15,7 @@ import Test.QuickCheck
 import Text.Printf
 import Data.Vector.Fusion.Stream.Monadic (flatten, Step(..))
 import Data.Vector.Fusion.Stream.Size
+import Control.Monad (guard)
 
 import Data.PrimitiveArray.Index.Class
 
@@ -22,6 +23,18 @@ import Data.PrimitiveArray.Index.Class
 
 newtype Strand = Strand { getStrand :: Int }
   deriving (Eq,Ord,Generic)
+
+instance Show Strand where
+  show P = "+"
+  show M = "-"
+
+instance Read Strand where
+  readsPrec _ xs = do
+    ([pm],s) <- lex xs
+    guard $ pm `elem` "+-PMpm"
+    return (go pm,s)
+    where go x | x `elem` "+Pp" = P
+               | x `elem` "-Mm" = M
 
 instance Bounded Strand where
   minBound = P
