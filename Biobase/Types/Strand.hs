@@ -5,17 +5,17 @@
 module Biobase.Types.Strand where
 
 import Control.DeepSeq
+import Control.Monad (guard)
 import Data.Aeson
 import Data.Binary
 import Data.Hashable (Hashable)
 import Data.Serialize (Serialize)
+import Data.Vector.Fusion.Stream.Monadic (flatten, Step(..))
+import Data.Vector.Fusion.Stream.Size
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
 import Test.QuickCheck
 import Text.Printf
-import Data.Vector.Fusion.Stream.Monadic (flatten, Step(..))
-import Data.Vector.Fusion.Stream.Size
-import Control.Monad (guard)
 
 import Data.PrimitiveArray.Index.Class
 

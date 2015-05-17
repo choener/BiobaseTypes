@@ -2,7 +2,12 @@
 
 # BiobaseTypes
 
-A bunch of types in use in different modules.
+A bunch of types in use in different modules:
+
+- numerical small and large numbers
+- Gibbs free energy change
+- phantom-typed linear indices: these encode the (rather annoying) habit of
+  computational biology of having both 0-based and 1-based data
 
 
 
