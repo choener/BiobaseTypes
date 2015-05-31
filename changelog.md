@@ -1,3 +1,8 @@
+0.1.1.0
+-------
+
+- added Biobase.Types.Odds module (from the BiobaseBlast package)
+
 0.1.0.0
 -------
 
