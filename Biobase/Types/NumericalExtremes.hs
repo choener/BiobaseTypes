@@ -14,6 +14,17 @@ module Biobase.Types.NumericalExtremes where
 
 -- | Very large and small numbers with some numerical safety to @1/0@ or
 -- @maxBound@ (depending on if we are @Integral@ or @RealFloat@.
+--
+-- We have:
+--
+-- @maxFinite >= extremelyLarge >= veryLarge@
+--
+-- @veryLarge >= verySmall@
+--
+-- @verySmall >= extremelySmall >= minFinite@.
+--
+-- TODO the small stuff should actually be around zero, but positive and go
+-- into @NumericalEpsilon@. Here we should actually use other names.
 
 class NumericalExtremes x where
   -- | Largest finite number
