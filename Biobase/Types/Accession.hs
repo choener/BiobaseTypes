@@ -15,6 +15,12 @@ import Data.Stringable
 
 
 -- * 'Accession' with phantom types.
+--
+-- <http://www.ncbi.nlm.nih.gov/Sequin/acc.html>
+--
+-- <http://www.uniprot.org/help/accession_numbers>
+--
+-- <http://en.wikipedia.org/wiki/Accession_number_%28bioinformatics%29>
 
 -- | The accession number is a unique identifier in bioinformatics.
 --
