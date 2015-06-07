@@ -54,19 +54,35 @@ instance Hashable  (Accession t)
 instance Serialize (Accession t)
 instance ToJSON    (Accession t)
 
--- ** NCBI
+-- ** NCBI phantom types
 
-data Nucleotide   -- ^ nucleotide sequence
-data Protein      -- ^ protin sequence
+-- | nucleotide sequence
+
+data Nucleotide
+
+-- | protein sequence
+
+data Protein
 
 -- ** Rfam phantom types
 --
 -- The format is RFxxxxx, PFxxxxx, or CLxxxxx.
 
-data Clan     -- ^ Tag as being a clan.
-data Pfam     -- ^ Tag as being a Pfam model.
-data Rfam     -- ^ Tag as being an Rfam model. Used for Stockholm and CM files.
+-- | Tag as being a clan.
+
+data Clan
+
+-- | Tag as being a Pfam model.
+
+data Pfam
+
+-- | Tag as being an Rfam model. Used for Stockholm and CM files.
+
+data Rfam
 
 
-data Species  -- ^ Species have an accession number, too.
+
+-- | Species have an accession number, too.
+
+data Species
 

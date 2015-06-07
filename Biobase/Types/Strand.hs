@@ -1,6 +1,9 @@
 
 -- | Strand information. A newtyped version, complete with serialization,
 -- pattern synonyms, being a @PrimitiveArray@ index type, etc.
+--
+-- TODO will be expanded to encode biological sense information more
+-- clearly: <http://en.wikipedia.org/wiki/Sense_%28molecular_biology%29>.
 
 module Biobase.Types.Strand where
 
@@ -45,7 +48,8 @@ instance Enum Strand where
   succ M = error "succ M"
   pred M = P
   pred P = error "pred P"
-  toEnum i = if i>=0 && i<=1 then Strand i else error $ "toEnum (Strand)" ++ show i
+  toEnum i | i>=0 && i<=1 = Strand i
+  toEnum i                = error $ "toEnum (Strand)" ++ show i
   fromEnum = getStrand
 
 instance NFData Strand
