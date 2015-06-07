@@ -8,9 +8,10 @@ import Data.Ix (Ix)
 import Data.Serialize
 import Data.Serialize.Text
 import Data.String
+import Data.Stringable
+import Data.Text.Binary
 import Data.Text (Text)
 import GHC.Generics (Generic)
-import Data.Stringable
 
 
 
