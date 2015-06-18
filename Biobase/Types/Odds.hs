@@ -23,9 +23,7 @@ newtype DLO = DLO { getDLO :: Int }
   deriving (Generic,Eq,Ord,Show,Read)
 
 derivingUnbox "DLO"
-  [t| DLO -> Int |]
-  [| getDLO      |]
-  [| DLO         |]
+  [t| DLO -> Int |]  [| getDLO |]  [| DLO |]
 
 instance Binary    DLO
 instance Serialize DLO

@@ -33,9 +33,7 @@ newtype DeltaGibbs = DG { getDG :: Double }
 
 
 derivingUnbox "DeltaGibbs"
-  [t| DeltaGibbs -> Double |]
-  [|  getDG                |]
-  [|  DG                   |]
+  [t| DeltaGibbs -> Double |]  [| getDG |]  [| DG |]
 
 instance Hashable  DeltaGibbs
 instance Binary    DeltaGibbs
@@ -60,9 +58,7 @@ newtype DeltaDekaGibbs = DekaG { getDekaG :: Int }
 
 
 derivingUnbox "DeltaDekaGibbs"
-  [t| DeltaDekaGibbs -> Int |]
-  [|  getDekaG              |]
-  [|  DekaG                 |]
+  [t| DeltaDekaGibbs -> Int |]  [| getDekaG |]  [| DekaG |]
 
 instance Hashable  DeltaDekaGibbs
 instance Binary    DeltaDekaGibbs

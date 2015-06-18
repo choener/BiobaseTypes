@@ -67,9 +67,7 @@ instance FromJSON  Strand
 instance Hashable  Strand
 
 derivingUnbox "Strand"
-  [t| Strand -> Int |]
-  [|  getStrand     |]
-  [|  Strand        |]
+  [t| Strand -> Int |]  [| getStrand |]  [| Strand |]
 
 instance Index Strand where
   linearIndex _ _ (Strand z) = z
