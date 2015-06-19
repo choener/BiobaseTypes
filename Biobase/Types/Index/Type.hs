@@ -1,6 +1,7 @@
 
 module Biobase.Types.Index.Type where
 
+import           Control.Applicative ((<$>))
 import           Control.DeepSeq
 import           Data.Aeson
 import           Data.Binary
