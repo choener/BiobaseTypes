@@ -9,20 +9,11 @@
 -- @fromInt0 0 :: Index 1@ yields the lowest 1-base index.
 
 module Biobase.Types.Index
---  ( Index
---  , index
---  , getIndex
---  , maybeIndex
---  , checkIndex
---  , reIndex
---  , (+.)
---  , (-.)
---  , fromInt0
---  , toInt0
   ( module Biobase.Types.Index
   , getIndex
   , index
   , maybeIndex
+  , Index
   ) where
 
 import Data.Proxy
