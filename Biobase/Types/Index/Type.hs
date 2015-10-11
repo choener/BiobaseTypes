@@ -8,8 +8,7 @@ import           Data.Binary
 import           Data.Hashable (Hashable)
 import           Data.Proxy
 import           Data.Serialize (Serialize)
-import           Data.Vector.Fusion.Stream.Monadic (flatten, Step(..))
-import           Data.Vector.Fusion.Stream.Size
+import           Data.Vector.Fusion.Stream.Monadic (Step(..))
 import           Data.Vector.Unboxed.Deriving
 import           GHC.Generics
 import           GHC.TypeLits
@@ -18,6 +17,7 @@ import           Test.QuickCheck
 import           Text.Printf
 
 import           Data.PrimitiveArray.Index.Class hiding (Index)
+import           Data.PrimitiveArray.Vector.Compat
 import qualified Data.PrimitiveArray.Index.Class as PA
 
 
@@ -79,7 +79,7 @@ instance forall t . KnownNat t => PA.Index (Index t) where
   {-# INLINE inBounds #-}
 
 instance IndexStream z => IndexStream (z:.Index t) where
-  streamUp (ls:.Index lf) (hs:.Index ht) = flatten mk step Unknown $ streamUp ls hs
+  streamUp (ls:.Index lf) (hs:.Index ht) = flatten mk step $ streamUp ls hs
     where mk z = return (z,lf)
           step (z,k)
             | k > ht    = return $ Done
@@ -87,7 +87,7 @@ instance IndexStream z => IndexStream (z:.Index t) where
           {-# Inline [0] mk   #-}
           {-# Inline [0] step #-}
   {-# Inline streamUp #-}
-  streamDown (ls:.Index lf) (hs:.Index ht) = flatten mk step Unknown $ streamDown ls hs
+  streamDown (ls:.Index lf) (hs:.Index ht) = flatten mk step $ streamDown ls hs
     where mk z = return (z,ht)
           step (z,k)
             | k < lf    = return $ Done

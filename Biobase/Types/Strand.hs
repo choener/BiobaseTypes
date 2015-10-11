@@ -13,14 +13,14 @@ import Data.Aeson
 import Data.Binary
 import Data.Hashable (Hashable)
 import Data.Serialize (Serialize)
-import Data.Vector.Fusion.Stream.Monadic (flatten, Step(..))
-import Data.Vector.Fusion.Stream.Size
+import Data.Vector.Fusion.Stream.Monadic (Step(..))
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
 import Test.QuickCheck
 import Text.Printf
 
 import Data.PrimitiveArray.Index.Class
+import Data.PrimitiveArray.Vector.Compat
 
 
 
@@ -34,10 +34,10 @@ instance Show Strand where
 instance Read Strand where
   readsPrec _ xs = do
     ([pm],s) <- lex xs
-    guard $ pm `elem` "+-PMpm"
+    guard $ pm `elem` ("+-PMpm" :: String)
     return (go pm,s)
-    where go x | x `elem` "+Pp" = P
-               | x `elem` "-Mm" = M
+    where go x | x `elem` ("+Pp" :: String) = P
+               | x `elem` ("-Mm" :: String) = M
 
 instance Bounded Strand where
   minBound = P
@@ -82,7 +82,7 @@ instance Index Strand where
   {-# INLINE inBounds #-}
 
 instance IndexStream z => IndexStream (z:.Strand) where
-  streamUp (ls:.Strand lf) (hs:.Strand ht) = flatten mk step Unknown $ streamUp ls hs
+  streamUp (ls:.Strand lf) (hs:.Strand ht) = flatten mk step $ streamUp ls hs
     where mk z = return (z,lf)
           step (z,k)
             | k > ht    = return $ Done
@@ -90,7 +90,7 @@ instance IndexStream z => IndexStream (z:.Strand) where
           {-# Inline [0] mk   #-}
           {-# Inline [0] step #-}
   {-# Inline streamUp #-}
-  streamDown (ls:.Strand lf) (hs:.Strand ht) = flatten mk step Unknown $ streamDown ls hs
+  streamDown (ls:.Strand lf) (hs:.Strand ht) = flatten mk step $ streamDown ls hs
     where mk z = return (z,ht)
           step (z,k)
             | k < lf    = return $ Done
