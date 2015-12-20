@@ -63,6 +63,12 @@ unsafePlus i n = Index $ getIndex i + n
 (-.) i n = checkIndex $ unsafeMinus i n
 {-# Inline (-.) #-}
 
+-- | Delta between two 'Index' points.
+
+delta :: forall t . KnownNat t => Index t -> Index t -> Int
+delta i j = abs . getIndex $ i - j
+{-# Inline delta #-}
+
 -- | Unsafe minus.
 
 unsafeMinus :: forall t . KnownNat t => Index t -> Int -> Index t
