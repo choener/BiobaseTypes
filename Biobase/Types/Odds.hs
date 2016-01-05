@@ -6,6 +6,7 @@ module Biobase.Types.Odds where
 import Control.DeepSeq (NFData(..))
 import Data.Aeson (FromJSON,ToJSON)
 import Data.Binary (Binary)
+import Data.Hashable (Hashable)
 import Data.Serialize (Serialize)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics (Generic)
@@ -29,6 +30,7 @@ instance Binary    DLO
 instance Serialize DLO
 instance FromJSON  DLO
 instance ToJSON    DLO
+instance Hashable  DLO
 
 instance NFData DLO where
   rnf (DLO k) = rnf k

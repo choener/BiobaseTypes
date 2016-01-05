@@ -6,6 +6,7 @@
 
 module Biobase.Types.Energy where
 
+import Control.DeepSeq
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Binary (Binary)
 import Data.Default
@@ -40,6 +41,7 @@ instance Binary    DeltaGibbs
 instance Serialize DeltaGibbs
 instance FromJSON  DeltaGibbs
 instance ToJSON    DeltaGibbs
+instance NFData    DeltaGibbs
 
 deriving instance NumericalExtremes DeltaGibbs
 deriving instance NumericalEpsilon  DeltaGibbs
@@ -65,6 +67,7 @@ instance Binary    DeltaDekaGibbs
 instance Serialize DeltaDekaGibbs
 instance FromJSON  DeltaDekaGibbs
 instance ToJSON    DeltaDekaGibbs
+instance NFData    DeltaDekaGibbs
 
 deriving instance NumericalExtremes DeltaDekaGibbs
 

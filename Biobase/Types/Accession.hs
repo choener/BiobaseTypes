@@ -1,6 +1,7 @@
 
 module Biobase.Types.Accession where
 
+import Control.DeepSeq
 import Data.Aeson
 import Data.Binary
 import Data.Hashable (Hashable)
@@ -53,6 +54,7 @@ instance FromJSON  (Accession t)
 instance Hashable  (Accession t)
 instance Serialize (Accession t)
 instance ToJSON    (Accession t)
+instance NFData    (Accession t)
 
 -- ** NCBI phantom types
 

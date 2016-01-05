@@ -52,8 +52,6 @@ instance Enum Strand where
   toEnum i                = error $ "toEnum (Strand)" ++ show i
   fromEnum = getStrand
 
-instance NFData Strand
-
 pattern P = Strand 0
 pattern M = Strand 1
 
@@ -65,6 +63,7 @@ instance Serialize Strand
 instance ToJSON    Strand
 instance FromJSON  Strand
 instance Hashable  Strand
+instance NFData    Strand
 
 derivingUnbox "Strand"
   [t| Strand -> Int |]  [| getStrand |]  [| Strand |]
