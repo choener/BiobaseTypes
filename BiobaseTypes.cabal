@@ -51,7 +51,9 @@ library
                , vector-th-unbox          >= 0.2      && < 0.3
   exposed-modules:
     Biobase.Types.Accession
+    Biobase.Types.Bitscore
     Biobase.Types.Energy
+    Biobase.Types.Evalue
     Biobase.Types.Index
     Biobase.Types.Index.Type
     Biobase.Types.NumericalExtremes

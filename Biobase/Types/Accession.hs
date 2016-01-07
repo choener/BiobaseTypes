@@ -37,13 +37,24 @@ import GHC.Generics (Generic)
 newtype Accession t = Accession { _getAccession :: Text }
   deriving (Eq,Ord,Read,Show,Generic)
 
+-- | Generate an accession with an explicit phantom type: @accession'
+-- Nucleotide "Bla"@ has type @:: Accession Nucleotide@.
+
+accession' :: Stringable s => t -> s -> Accession t
+accession' t = Accession . toText
+
+-- | Generate an accession when the type @Accession t@ is clear from the
+-- context.
+
 accession :: Stringable s => s -> Accession t
 accession = Accession . toText
 {-# Inline accession #-}
 
-tagAccession :: Accession f -> Accession t
-tagAccession = Accession . _getAccession
-{-# Inline tagAccession #-}
+-- | Retag an accession
+
+retagAccession :: Accession f -> Accession t
+retagAccession = Accession . _getAccession
+{-# Inline retagAccession #-}
 
 instance IsString (Accession t) where
   fromString = accession
@@ -56,15 +67,20 @@ instance Serialize (Accession t)
 instance ToJSON    (Accession t)
 instance NFData    (Accession t)
 
+
+
+-- * Phantom types. All with an excliti data constructor to guide
+-- 'accession''.
+
 -- ** NCBI phantom types
 
 -- | nucleotide sequence
 
-data Nucleotide
+data Nucleotide = Nucleotide
 
 -- | protein sequence
 
-data Protein
+data Protein = Protein
 
 -- ** Rfam phantom types
 --
@@ -72,19 +88,17 @@ data Protein
 
 -- | Tag as being a clan.
 
-data Clan
+data Clan = Clan
 
 -- | Tag as being a Pfam model.
 
-data Pfam
+data Pfam = Pfam
 
 -- | Tag as being an Rfam model. Used for Stockholm and CM files.
 
-data Rfam
-
-
+data Rfam = Rfam
 
 -- | Species have an accession number, too.
 
-data Species
+data Species = Species
 

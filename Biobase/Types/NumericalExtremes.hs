@@ -17,62 +17,58 @@ module Biobase.Types.NumericalExtremes where
 --
 -- We have:
 --
--- @maxFinite >= extremelyLarge >= veryLarge@
+-- @maxFinite >= maxExtreme >= maxLarge@
 --
--- @veryLarge >= verySmall@
+-- @maxLarge >= minLarge@
 --
--- @verySmall >= extremelySmall >= minFinite@.
---
--- TODO the small stuff should actually be around zero, but positive and go
--- into @NumericalEpsilon@. Here we should actually use other names.
+-- @minLarge >= minExtreme >= minFinite@.
 
 class NumericalExtremes x where
-  -- | Largest finite number
-  maxFinite       :: x
-  -- | Smallest finite number
-  minFinite       :: x
-  -- | Around @1/100@ of the largest finite number
-  veryLarge       :: x
-  -- | Around @1/100@ of the smallest finite number
-  verySmall       :: x
-  -- | Around @1/ 10@ of the largest finite number
-  extremelyLarge  :: x
-  -- | Around @1/ 10@ of the smallest finite number
-  extremelySmall  :: x
+  maxFinite   :: x  -- ^ Largest finite number
+  minFinite   :: x  -- ^ Smallest finite number
+  maxExtreme  :: x  -- ^ Around @1/ 10@ of the largest finite number
+  minExtreme  :: x  -- ^ Around @1/ 10@ of the smallest finite number
+  maxLarge    :: x  -- ^ Around @1/100@ of the largest finite number
+  minLarge    :: x  -- ^ Around @1/100@ of the smallest finite number
 
 -- | Small numbers.
 
 class NumericalEpsilon x where
-  -- | Smallest positive number @/= 0.0@.
-  epsilon         :: x
+  epsilon   :: x  -- ^ Smallest positive number @/= 0.0@.
 
 
 
 instance NumericalExtremes Int where
-  maxFinite      = maxBound
-  minFinite      = minBound
-  veryLarge      = maxBound `div` 100
-  verySmall      = minBound `div` 100
-  extremelyLarge = maxBound `div`  10
-  extremelySmall = minBound `div`  10
-  {-# Inline veryLarge      #-}
-  {-# Inline verySmall      #-}
-  {-# Inline extremelyLarge #-}
-  {-# Inline extremelySmall #-}
+  maxFinite  = maxBound
+  minFinite  = minBound
+  maxLarge   = maxBound `div` 100
+  minLarge   = minBound `div` 100
+  maxExtreme = maxBound `div`  10
+  minExtreme = minBound `div`  10
+  {-# Inline maxFinite  #-}
+  {-# Inline minFinite  #-}
+  {-# Inline maxExtreme #-}
+  {-# Inline minExtreme #-}
+  {-# Inline maxLarge   #-}
+  {-# Inline minLarge   #-}
 
 
 
 instance NumericalExtremes Double where
-  maxFinite      =  1.79e+308
-  minFinite      = -1.79e+308
-  veryLarge      = maxFinite / 100
-  verySmall      = minFinite / 100
-  extremelyLarge = maxFinite /  10
-  extremelySmall = minFinite /  10
-  {-# Inline veryLarge      #-}
-  {-# Inline verySmall      #-}
-  {-# Inline extremelyLarge #-}
-  {-# Inline extremelySmall #-}
+  maxFinite  =  1.79e+308
+  minFinite  = -1.79e+308
+  maxExtreme =  1.79e+307
+  minExtreme = -1.79e+307
+  maxLarge   =  1.79e+306
+  minLarge   = -1.79e+306
+  {-# Inline maxFinite  #-}
+  {-# Inline minFinite  #-}
+  {-# Inline maxExtreme #-}
+  {-# Inline minExtreme #-}
+  {-# Inline maxLarge   #-}
+  {-# Inline minLarge   #-}
+
+
 
 instance NumericalEpsilon Double where
   epsilon = 2.2e-16
