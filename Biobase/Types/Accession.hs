@@ -1,4 +1,7 @@
 
+-- | Accession numbers. These /numbers/ are not really numbers because they
+-- they are made up of alphanumeric characters.
+
 module Biobase.Types.Accession where
 
 import Control.DeepSeq
@@ -11,8 +14,10 @@ import Data.Serialize.Text
 import Data.String
 import Data.Stringable
 import Data.Text.Binary
-import Data.Text (Text)
+import Data.Text (Text, span)
+import Data.Char (isLetter)
 import GHC.Generics (Generic)
+import Prelude hiding (length,span)
 
 
 
@@ -101,4 +106,22 @@ data Rfam = Rfam
 -- | Species have an accession number, too.
 
 data Species = Species
+
+
+
+-- * Helper functions
+
+-- | Guess the type of accession number. Returns @Nothing@ if unknown
+-- structure.
+
+guessAccessionType :: Accession t -> Maybe Text
+guessAccessionType (Accession a) = case (length l, length d) of
+  (1,5)                   -> Just "Nucleotide"
+  (2,6)                   -> Just "Nucleotide"
+  (3,5)                   -> Just "Protein"
+  (3,k) | 8<= k && k<= 10 -> Just "WGS"
+  (5,7)                   -> Just "MGA"
+  _                       -> Nothing
+  where (l,d) = span isLetter a
+
 

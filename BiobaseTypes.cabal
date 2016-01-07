@@ -59,6 +59,7 @@ library
     Biobase.Types.NumericalExtremes
     Biobase.Types.Odds
     Biobase.Types.Strand
+    Biobase.Types.Taxonomy
   default-language:
     Haskell2010
   default-extensions: BangPatterns
@@ -68,6 +69,7 @@ library
                     , GeneralizedNewtypeDeriving
                     , KindSignatures
                     , MultiParamTypeClasses
+                    , OverloadedStrings
                     , PatternSynonyms
                     , ScopedTypeVariables
                     , StandaloneDeriving
