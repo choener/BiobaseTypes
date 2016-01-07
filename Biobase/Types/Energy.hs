@@ -47,7 +47,7 @@ deriving instance NumericalExtremes DeltaGibbs
 deriving instance NumericalEpsilon  DeltaGibbs
 
 instance Default DeltaGibbs where
-  def = extremelyLarge
+  def = maxLarge
   {-# Inline def #-}
 
 
@@ -72,6 +72,6 @@ instance NFData    DeltaDekaGibbs
 deriving instance NumericalExtremes DeltaDekaGibbs
 
 instance Default DeltaDekaGibbs where
-  def = extremelyLarge
+  def = maxLarge
   {-# Inline def #-}
 
