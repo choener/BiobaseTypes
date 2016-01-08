@@ -1,29 +1,35 @@
 
 -- | Names for biological things.
 --
--- TODO where useful, we should use internalization. One big point are
--- species names. With certain problems, like MAF file reading, there is *a
--- lot* of redundancy.
+-- Species names are internalized and represented as an @Int@. This allows
+-- using them in structures like an @IntMap@.
+--
+-- For other names, we newtype-wrap normal text internalization.
+--
 
 module Biobase.Types.Names where
 
-import           Control.Applicative
-import           Control.DeepSeq (NFData(..))
-import           Data.Aeson as A
-import           Data.Binary      as DB
-import           Data.Hashable
-import           Data.Serialize   as DS
-import           Data.Serialize.Text
-import           Data.Stringable as SA
-import           Data.String as IS
-import           Data.Text.Binary
-import           Data.Text (Text)
-import           Data.Vector.Unboxed.Deriving
-import           GHC.Generics
+import Control.Applicative
+import Control.DeepSeq (NFData(..))
+import Data.Aeson as A
+import Data.Binary      as DB
+import Data.Hashable
+import Data.Serialize   as DS
+import Data.Serialize.Text
+import Data.Stringable as SA
+import Data.String as IS
+import Data.Text.Binary
+import Data.Text (Text,pack)
+import Data.Vector.Unboxed.Deriving
+import GHC.Generics
+import Data.Interned.Text
+import Data.Interned
 
-import           Biobase.Types.Names.Internal
+import Biobase.Types.Names.Internal
 
 
+
+-- * Int-internalized species names.
 
 -- | A species name. Represented with an @Int@, but behaves like a @Text@.
 
@@ -88,6 +94,57 @@ instance FromJSON SpeciesName where
   {-# Inline parseJSON #-}
 
 instance ToJSON SpeciesName where
+  toJSON = toJSON . toText
+  {-# Inline toJSON #-}
+
+
+
+-- * Internalize taxonomic rank names
+
+newtype TaxonomicRank = TaxonomicRank { getTaxonomicRank :: InternedText }
+  deriving (IsString,Eq,Ord,Show,Generic)
+
+instance NFData TaxonomicRank where
+  rnf (TaxonomicRank it) = rnf (internedTextId it)
+  {-# Inline rnf #-}
+
+instance Stringable TaxonomicRank where
+  toString    = toString . unintern . getTaxonomicRank
+  fromString  = fromText . pack
+  length      = SA.length . toText
+  toText      = unintern . getTaxonomicRank
+  fromText    = TaxonomicRank . intern
+  {-# Inline toString   #-}
+  {-# Inline fromString #-}
+  {-# Inline length     #-}
+  {-# Inline toText     #-}
+  {-# Inline fromText   #-}
+
+instance Hashable TaxonomicRank where
+  hashWithSalt s (TaxonomicRank it) = hashWithSalt s (internedTextId it)
+  {-# Inline hashWithSalt #-}
+
+instance Read TaxonomicRank where
+  readsPrec p str = [ (IS.fromString s, y) | (s,y) <- readsPrec p str ]
+  {-# Inline readsPrec #-}
+
+instance Binary TaxonomicRank where
+  put = DB.put . toText
+  get = fromText <$> DB.get
+  {-# Inline put #-}
+  {-# Inline get #-}
+
+instance Serialize TaxonomicRank where
+  put = DS.put . toText
+  get = fromText <$> DS.get
+  {-# Inline put #-}
+  {-# Inline get #-}
+
+instance FromJSON TaxonomicRank where
+  parseJSON s = fromText <$> parseJSON s
+  {-# Inline parseJSON #-}
+
+instance ToJSON TaxonomicRank where
   toJSON = toJSON . toText
   {-# Inline toJSON #-}
 

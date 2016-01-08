@@ -17,6 +17,7 @@ import Data.Vector (Vector)
 import GHC.Generics (Generic)
 
 import Biobase.Types.Accession (Accession,Species)
+import Biobase.Types.Names (SpeciesName, TaxonomicRank)
 
 
 
@@ -51,9 +52,9 @@ derivingUnbox "Classification"
 -- context.
 
 data Taxon = Taxon
-  { species         :: !Text                            -- ^ the full, formal name of a species
-  , accession       :: !(Accession Species)             -- ^ the accession for the species (or @""@ if unknown)
-  , classification  :: !(Vector (Text,Classification))  -- ^ vector with classification information
+  { species         :: !SpeciesName                             -- ^ the full, formal name of a species
+  , accession       :: !(Accession Species)                     -- ^ the accession for the species (or @""@ if unknown)
+  , classification  :: !(Vector (TaxonomicRank,Classification)) -- ^ vector with classification information
   }
   deriving (Eq,Read,Show,Generic)
 
