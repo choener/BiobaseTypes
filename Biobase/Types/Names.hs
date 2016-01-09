@@ -45,6 +45,8 @@ instance Ord SpeciesName where
   SpeciesName l `compare` SpeciesName r = speciesNameBimapLookupInt l `compare` speciesNameBimapLookupInt r
   {-# Inline compare #-}
 
+-- | Smart constructor that performs the correct internalization.
+
 speciesName :: Text -> SpeciesName
 speciesName = SpeciesName . speciesNameBimapAdd
 {-# Inline speciesName #-}
@@ -100,6 +102,8 @@ instance ToJSON SpeciesName where
 
 
 -- * Internalize taxonomic rank names
+
+-- | The taxonomic rank. This encodes the name for a given rank.
 
 newtype TaxonomicRank = TaxonomicRank { getTaxonomicRank :: InternedText }
   deriving (IsString,Eq,Ord,Show,Generic)
