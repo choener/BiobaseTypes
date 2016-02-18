@@ -11,7 +11,7 @@ import Data.Primitive.Types
 import Data.Serialize
 import Data.Text (Text)
 import Data.Vector.Binary
-import Data.Vector.Cereal
+import Data.Vector.Serialize
 import Data.Vector.Unboxed.Deriving
 import Data.Vector (Vector)
 import GHC.Generics (Generic)
