@@ -3,12 +3,11 @@ packages:
 - '.'
 - location: ../Lib-bimaps
   extra-dep: true
-- location: ../Lib-PrimitiveArray
-  extra-dep: true
 extra-deps:
 - cereal-text-0.1.0.1
 - intern-0.9.1.4
 - OrderedBits-0.0.1.0
+- PrimitiveArray-0.7.0.1
 - storable-record-0.0.3.1
 - storable-tuple-0.0.3.2
 flags: {}
