@@ -1,10 +1,11 @@
 
 module Main where
 
-import Test.Framework.Providers.QuickCheck2
-import Test.Framework.TH
-import Test.QuickCheck.Modifiers
-import Test.QuickCheck.Property
+import           Test.QuickCheck.Modifiers
+import           Test.QuickCheck.Property
+import           Test.Tasty
+import           Test.Tasty.QuickCheck (testProperty)
+import           Test.Tasty.TH
 
 import Biobase.Types.NumericalExtremes
 

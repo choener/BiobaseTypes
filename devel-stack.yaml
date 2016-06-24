@@ -1,13 +1,19 @@
-resolver: lts-5.10
+resolver: lts-6.4
+
 packages:
 - '.'
 - location: ../Lib-bimaps
   extra-dep: true
+- location: ../Lib-OrderedBits
+  extra-dep: true
+- location: ../Lib-PrimitiveArray
+  extra-dep: true
+
 extra-deps:
-- cereal-text-0.1.0.1
+- cereal-text-0.1.0.2
 - intern-0.9.1.4
-- OrderedBits-0.0.1.0
-- PrimitiveArray-0.7.0.1
 - storable-record-0.0.3.1
 - storable-tuple-0.0.3.2
+
 flags: {}
+
