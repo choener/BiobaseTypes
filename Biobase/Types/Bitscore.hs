@@ -39,7 +39,7 @@ import           Biobase.Types.NumericalExtremes
 -- Infernal users guide, p.42: log-odds score in log_2 (aka bits).
 
 newtype Bitscore = Bitscore { getBitscore :: Double }
-  deriving (Eq,Ord,Read,Show,Num,Generic)
+  deriving (Eq,Ord,Read,Show,Num,Fractional,Generic)
 
 instance Binary    Bitscore
 instance FromJSON  Bitscore
@@ -63,6 +63,8 @@ instance Default Bitscore where
 
 -- | Given a null model and a probability, calculate the corresponding
 -- 'BitScore'.
+--
+-- TODO @x<=epsilon@ ?
 
 prob2Score :: Double -> Double -> Bitscore
 prob2Score null x
