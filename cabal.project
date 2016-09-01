@@ -1,5 +1,5 @@
 packages: .
-          ../Lib-bimaps
+--          ../Lib-bimaps
 --          ../Lib-DPutils
 --          ../Lib-OrderedBits
 --          ../Lib-PrimitiveArray
