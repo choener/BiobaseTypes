@@ -7,15 +7,16 @@ module Biobase.Types.Accession where
 import Control.DeepSeq
 import Data.Aeson
 import Data.Binary
+import Data.Char (isLetter)
 import Data.Hashable (Hashable)
 import Data.Ix (Ix)
 import Data.Serialize
 import Data.Serialize.Text
 import Data.String
-import Data.Stringable
+import Data.String.Conversions (ConvertibleStrings(..), cs)
+import Data.String.Conversions.Monomorphic (toST, fromST)
 import Data.Text.Binary
-import Data.Text (Text, span)
-import Data.Char (isLetter)
+import Data.Text (Text, span, length)
 import GHC.Generics (Generic)
 import Prelude hiding (length,span)
 
@@ -45,14 +46,14 @@ newtype Accession t = Accession { _getAccession :: Text }
 -- | Generate an accession with an explicit phantom type: @accession'
 -- Nucleotide "Bla"@ has type @:: Accession Nucleotide@.
 
-accession' :: Stringable s => t -> s -> Accession t
-accession' t = Accession . toText
+accession' :: ConvertibleStrings s Text => t -> s -> Accession t
+accession' t = Accession . toST
 
 -- | Generate an accession when the type @Accession t@ is clear from the
 -- context.
 
-accession :: Stringable s => s -> Accession t
-accession = Accession . toText
+accession :: ConvertibleStrings s Text => s -> Accession t
+accession = Accession . toST
 {-# Inline accession #-}
 
 -- | Retag an accession

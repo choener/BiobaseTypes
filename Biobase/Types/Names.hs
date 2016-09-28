@@ -14,16 +14,17 @@ import Control.DeepSeq (NFData(..))
 import Data.Aeson as A
 import Data.Binary      as DB
 import Data.Hashable
+import Data.Interned
+import Data.Interned.Text
 import Data.Serialize   as DS
 import Data.Serialize.Text
-import Data.Stringable as SA
 import Data.String as IS
+import Data.String.Conversions (ConvertibleStrings(..), cs)
+import Data.String.Conversions.Monomorphic (toST, fromST)
 import Data.Text.Binary
-import Data.Text (Text,pack)
+import Data.Text (Text, pack, unpack)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
-import Data.Interned.Text
-import Data.Interned
 
 import Biobase.Types.Names.Internal
 
@@ -56,7 +57,7 @@ instance IsString SpeciesName where
   {-# Inline fromString #-}
 
 instance Show SpeciesName where
-  showsPrec p i r = showsPrec p (toString i) r
+  showsPrec p i r = showsPrec p (unpack $ toST i) r
   {-# Inline showsPrec #-}
 
 instance Read SpeciesName where
@@ -65,38 +66,32 @@ instance Read SpeciesName where
 
 instance Hashable SpeciesName
 
-instance Stringable SpeciesName where
-  toString    = toString . speciesNameBimapLookupInt . getSpeciesNameRep
-  fromString  = speciesName . SA.fromString
-  length      = SA.length . speciesNameBimapLookupInt . getSpeciesNameRep
-  toText      = toText . speciesNameBimapLookupInt . getSpeciesNameRep
-  fromText    = speciesName . fromText
-  {-# Inline toString   #-}
-  {-# Inline fromString #-}
-  {-# Inline length     #-}
-  {-# Inline toText     #-}
-  {-# Inline fromText   #-}
+instance ConvertibleStrings Text SpeciesName where
+  convertString = speciesName
+
+instance ConvertibleStrings SpeciesName Text where
+  convertString = speciesNameBimapLookupInt . getSpeciesNameRep
 
 instance NFData SpeciesName
 
 instance Binary SpeciesName where
-  put = DB.put . toText
-  get = fromText <$> DB.get
+  put = DB.put . toST
+  get = fromST <$> DB.get
   {-# Inline put #-}
   {-# Inline get #-}
 
 instance Serialize SpeciesName where
-  put = DS.put . toText
-  get = fromText <$> DS.get
+  put = DS.put . toST
+  get = fromST <$> DS.get
   {-# Inline put #-}
   {-# Inline get #-}
 
 instance FromJSON SpeciesName where
-  parseJSON s = fromText <$> parseJSON s
+  parseJSON s = fromST <$> parseJSON s
   {-# Inline parseJSON #-}
 
 instance ToJSON SpeciesName where
-  toJSON = toJSON . toText
+  toJSON = toJSON . toST
   {-# Inline toJSON #-}
 
 
@@ -112,17 +107,11 @@ instance NFData TaxonomicRank where
   rnf (TaxonomicRank it) = rnf (internedTextId it)
   {-# Inline rnf #-}
 
-instance Stringable TaxonomicRank where
-  toString    = toString . unintern . getTaxonomicRank
-  fromString  = fromText . pack
-  length      = SA.length . toText
-  toText      = unintern . getTaxonomicRank
-  fromText    = TaxonomicRank . intern
-  {-# Inline toString   #-}
-  {-# Inline fromString #-}
-  {-# Inline length     #-}
-  {-# Inline toText     #-}
-  {-# Inline fromText   #-}
+instance ConvertibleStrings Text TaxonomicRank where
+  convertString = TaxonomicRank . intern
+
+instance ConvertibleStrings TaxonomicRank Text where
+  convertString = unintern . getTaxonomicRank
 
 instance Hashable TaxonomicRank where
   hashWithSalt s (TaxonomicRank it) = hashWithSalt s (internedTextId it)
@@ -133,22 +122,22 @@ instance Read TaxonomicRank where
   {-# Inline readsPrec #-}
 
 instance Binary TaxonomicRank where
-  put = DB.put . toText
-  get = fromText <$> DB.get
+  put = DB.put . toST
+  get = fromST <$> DB.get
   {-# Inline put #-}
   {-# Inline get #-}
 
 instance Serialize TaxonomicRank where
-  put = DS.put . toText
-  get = fromText <$> DS.get
+  put = DS.put . toST
+  get = fromST <$> DS.get
   {-# Inline put #-}
   {-# Inline get #-}
 
 instance FromJSON TaxonomicRank where
-  parseJSON s = fromText <$> parseJSON s
+  parseJSON s = fromST <$> parseJSON s
   {-# Inline parseJSON #-}
 
 instance ToJSON TaxonomicRank where
-  toJSON = toJSON . toText
+  toJSON = toJSON . toST
   {-# Inline toJSON #-}
 
