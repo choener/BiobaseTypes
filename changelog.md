@@ -1,3 +1,9 @@
+0.1.2.1
+-------
+
+- increased minimal required PrimitiveArray version
+- removed almost all upper bounds
+
 0.1.2.0
 -------
 
