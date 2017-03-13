@@ -1,6 +1,6 @@
 packages: .
-          ../Lib-bimaps
-          ../Lib-DPutils
-          ../Lib-OrderedBits
-          ../Lib-PrimitiveArray
+--          ../Lib-bimaps
+--          ../Lib-DPutils
+--          ../Lib-OrderedBits
+--          ../Lib-PrimitiveArray
 
