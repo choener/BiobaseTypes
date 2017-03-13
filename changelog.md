@@ -3,6 +3,7 @@
 
 - increased minimal required PrimitiveArray version
 - removed almost all upper bounds
+- removed ghc 7.8.4 as viable compiler
 
 0.1.2.0
 -------
