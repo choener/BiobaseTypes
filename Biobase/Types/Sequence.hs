@@ -3,13 +3,13 @@
 
 module Biobase.Types.Sequence where
 
-import           GHC.Generics (Generic)
-import           Data.Typeable (Typeable)
-import           Data.Data (Data)
-import qualified Data.ByteString.Char8 as BS
-import           Data.ByteString (ByteString)
 import           Control.Lens
+import           Data.ByteString (ByteString)
 import           Data.Char (ord,chr)
+import           Data.Data (Data)
+import           Data.Typeable (Typeable)
+import           GHC.Generics (Generic)
+import qualified Data.ByteString.Char8 as BS
 
 
 
@@ -68,7 +68,9 @@ dna2rna = \case
   x   → x
 {-# Inline dna2rna #-}
 
--- | Transcribes a DNA sequence into an RNA sequence.
+-- | Transcribes a DNA sequence into an RNA sequence. Note that 'transcribe' is
+-- actually very generic. We just define its semantics to be that of
+-- biomolecular transcription.
 --
 -- @@
 -- DNAseq "ACGT" ^. transcribe == RNAseq "ACGU"
@@ -80,10 +82,16 @@ class Transcribe f where
   type TranscribeTo f ∷ *
   transcribe ∷ Iso' f (TranscribeTo f)
 
+-- | Transcribe a DNA sequence into an RNA sequence. This does not @reverse@
+-- the sequence!
+
 instance Transcribe DNAseq where
   type TranscribeTo DNAseq = RNAseq
   transcribe = iso (RNAseq . BS.map dna2rna . _dnaseq) (DNAseq . BS.map rna2dna . _rnaseq)
   {-# Inline transcribe #-}
+
+-- | Transcribe a RNA sequence into an DNA sequence. This does not @reverse@
+-- the sequence!
 
 instance Transcribe RNAseq where
   type TranscribeTo RNAseq = DNAseq
