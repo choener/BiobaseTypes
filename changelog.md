@@ -1,3 +1,8 @@
+0.1.3.0
+-------
+
+- "biostring" wrappers (ByteString based RNA, DNA, ... sequences)
+
 0.1.2.1
 -------
 

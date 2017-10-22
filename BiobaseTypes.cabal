@@ -1,7 +1,7 @@
 name:           BiobaseTypes
-version:        0.1.2.1
-author:         Christian Hoener zu Siederdissen, 2015 - 2016
-copyright:      Christian Hoener zu Siederdissen, 2015 - 2016
+version:        0.1.3.0
+author:         Christian Hoener zu Siederdissen, 2015 - 2017
+copyright:      Christian Hoener zu Siederdissen, 2015 - 2017
 homepage:       https://github.com/choener/BiobaseTypes
 bug-reports:    https://github.com/choener/BiobaseTypes/issues
 maintainer:     choener@bioinf.uni-leipzig.de
@@ -11,7 +11,7 @@ license-file:   LICENSE
 build-type:     Simple
 stability:      experimental
 cabal-version:  >= 1.10.0
-tested-with:    GHC == 7.10.3, GHC == 8.0.1
+tested-with:    GHC == 8.0.2, GHC == 8.2.1
 synopsis:       Collection of types for bioinformatics
 description:
                 Types used in a number of bioinformatics libraries.
@@ -21,6 +21,8 @@ description:
                 * energies
                 .
                 * numerics
+                .
+                * biostring wrappers
 
 
 
@@ -34,6 +36,7 @@ library
   build-depends: base                     >= 4.7      &&  < 5.0
                , aeson                    >= 0.8
                , binary                   >= 0.7
+               , bytestring
                , cereal                   >= 0.4
                , cereal-text              >= 0.1
                , cereal-vector            >= 0.2
@@ -41,6 +44,7 @@ library
                , deepseq                  >= 1.3
                , hashable                 >= 1.2
                , intern                   >= 0.9
+               , lens                     >= 4.0
                , primitive                >= 0.5
                , QuickCheck               >= 2.7
                , string-conversions       >= 0.4
@@ -63,17 +67,20 @@ library
     Biobase.Types.Names.Internal
     Biobase.Types.NumericalExtremes
     Biobase.Types.Odds
+    Biobase.Types.Sequence
     Biobase.Types.Strand
     Biobase.Types.Taxonomy
   default-language:
     Haskell2010
   default-extensions: BangPatterns
                     , DataKinds
+                    , DeriveDataTypeable
                     , DeriveGeneric
                     , FlexibleContexts
                     , FlexibleInstances
                     , GeneralizedNewtypeDeriving
                     , KindSignatures
+                    , LambdaCase
                     , MultiParamTypeClasses
                     , OverloadedStrings
                     , PatternSynonyms
@@ -82,6 +89,7 @@ library
                     , TemplateHaskell
                     , TypeFamilies
                     , TypeOperators
+                    , UnicodeSyntax
   ghc-options:
     -O2 -funbox-strict-fields
 
