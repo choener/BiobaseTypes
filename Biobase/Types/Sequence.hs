@@ -10,6 +10,24 @@ import           Data.Data (Data)
 import           Data.Typeable (Typeable)
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.UTF8 as BSU
+
+
+
+-- | A sequence identifier. Just a newtype wrapped text field. Because we can
+-- never know what people are up to, this is utf8-encoded.
+--
+-- TODO Provide @Iso'@ for @Text@, too?
+
+newtype SequenceID = SequenceID { _sequenceID ∷ ByteString }
+  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
+makeLenses ''SequenceID
+
+-- | Convert to a string in a unicode-aware manner.
+
+sequenceIDstring ∷ Iso' SequenceID String
+sequenceIDstring = sequenceID . iso BSU.toString BSU.fromString
+{-# Inline sequenceIDstring #-}
 
 
 
@@ -32,7 +50,10 @@ instance Ixed RNAseq where
 deriving instance Reversing RNAseq
 
 
--- |
+-- | A short DNA sequence.
+--
+-- Note everything really long should be handled by specialized libraries with
+-- streaming capabilities.
 
 newtype DNAseq = DNAseq { _dnaseq ∷ ByteString }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)

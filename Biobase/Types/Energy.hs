@@ -7,8 +7,10 @@
 module Biobase.Types.Energy where
 
 import Control.DeepSeq
+import Control.Lens
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Binary (Binary)
+import Data.Data
 import Data.Default
 import Data.Hashable
 import Data.Serialize (Serialize)
@@ -28,31 +30,30 @@ import Biobase.Types.NumericalExtremes
 --
 -- TODO shall we phantom-type the actual units?
 
-newtype DeltaGibbs = DG { getDG :: Double }
-  deriving (Eq,Ord,Num,Fractional,Read,Show,Generic)
+newtype DG = DG { dG :: Double }
+  deriving (Eq,Ord,Num,Fractional,Read,Show,Generic,Data,Typeable)
+makeLenses ''DG
 
+derivingUnbox "DG"
+  [t| DG -> Double |]  [| dG |]  [| DG |]
 
+instance Hashable  DG
+instance Binary    DG
+instance Serialize DG
+instance FromJSON  DG
+instance ToJSON    DG
+instance NFData    DG
 
-derivingUnbox "DeltaGibbs"
-  [t| DeltaGibbs -> Double |]  [| getDG |]  [| DG |]
+deriving instance NumericalExtremes DG
+deriving instance NumericalEpsilon  DG
 
-instance Hashable  DeltaGibbs
-instance Binary    DeltaGibbs
-instance Serialize DeltaGibbs
-instance FromJSON  DeltaGibbs
-instance ToJSON    DeltaGibbs
-instance NFData    DeltaGibbs
-
-deriving instance NumericalExtremes DeltaGibbs
-deriving instance NumericalEpsilon  DeltaGibbs
-
-instance Default DeltaGibbs where
+instance Default DG where
   def = maxLarge
   {-# Inline def #-}
 
 
 
--- | @round $ DeltaGibbs / 100@.
+-- | @round $ DG / 100@.
 
 newtype DeltaDekaGibbs = DekaG { getDekaG :: Int }
   deriving (Eq,Ord,Num,Read,Show,Generic)
