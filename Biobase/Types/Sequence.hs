@@ -50,6 +50,7 @@ instance Ixed RNAseq where
 deriving instance Reversing RNAseq
 
 
+
 -- | A short DNA sequence.
 --
 -- Note everything really long should be handled by specialized libraries with
@@ -79,6 +80,21 @@ rna2dna = \case
   x   → x
 {-# Inline rna2dna #-}
 
+-- | Single character RNA complement.
+
+rnaComplement ∷ Char → Char
+rnaComplement = \case
+  'A' → 'U'
+  'a' → 'u'
+  'C' → 'G'
+  'c' → 'g'
+  'G' → 'C'
+  'g' → 'c'
+  'U' → 'A'
+  'u' → 'a'
+  x   → x
+{-# Inline rnaComplement #-}
+
 -- | Simple case translation from @T@ to @U@ with upper- and lower-case
 -- awareness.
 
@@ -89,14 +105,33 @@ dna2rna = \case
   x   → x
 {-# Inline dna2rna #-}
 
+-- | Single character DNA complement.
+
+dnaComplement ∷ Char → Char
+dnaComplement = \case
+  'A' → 'T'
+  'a' → 't'
+  'C' → 'G'
+  'c' → 'g'
+  'G' → 'C'
+  'g' → 'c'
+  'T' → 'A'
+  't' → 'a'
+  x   → x
+{-# Inline dnaComplement #-}
+
+
+
 -- | Transcribes a DNA sequence into an RNA sequence. Note that 'transcribe' is
 -- actually very generic. We just define its semantics to be that of
 -- biomolecular transcription.
 --
--- @@
--- DNAseq "ACGT" ^. transcribe == RNAseq "ACGU"
--- RNAseq "ACGU" ^. transcribe == DNAseq "ACGT"
--- RNAseq "ACGU" ^. from transcribe :: DNAseq == DNAseq "ACGT"
+-- 'transcribe' makes the assumption that, given @DNA -> RNA@, we transcribe
+-- the coding strand.
+-- <http://hyperphysics.phy-astr.gsu.edu/hbase/Organic/transcription.html>
+--
+-- @@ DNAseq "ACGT" ^. transcribe == RNAseq "ACGU" RNAseq "ACGU" ^. transcribe
+-- == DNAseq "ACGT" RNAseq "ACGU" ^. from transcribe :: DNAseq == DNAseq "ACGT"
 -- @@
 
 class Transcribe f where
@@ -118,4 +153,19 @@ instance Transcribe RNAseq where
   type TranscribeTo RNAseq = DNAseq
   transcribe = from transcribe
   {-# Inline transcribe #-}
+
+
+
+-- | The complement of a biosequence.
+
+class Complement f where
+  complement ∷ Iso' f f
+
+instance Complement DNAseq where
+  complement = iso (DNAseq . BS.map dnaComplement . _dnaseq) (DNAseq . BS.map dnaComplement . _dnaseq)
+  {-# Inline complement #-}
+
+instance Complement RNAseq where
+  complement = iso (RNAseq . BS.map rnaComplement . _rnaseq) (RNAseq . BS.map rnaComplement . _rnaseq)
+  {-# Inline complement #-}
 
