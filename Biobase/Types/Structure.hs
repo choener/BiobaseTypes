@@ -18,10 +18,10 @@ import qualified Data.ByteString.Char8 as BS8
 
 
 -- | Secondary structure using @()@ for paired elements, and @.@ for unpaired
--- ones. It is assumed that the @()@ match up.
+-- ones. It is assumed that the @()@ match up. These structures from a Monoid.
 
 newtype RNAss = RNAss { _rnass ∷ ByteString }
-  deriving (Eq,Ord,Show,Read,Data,Typeable,Generic)
+  deriving (Eq,Ord,Show,Read,Data,Typeable,Generic,Monoid)
 makeLenses ''RNAss
 
 -- | Ensemble structure encoding. *Very* different type ctor name chosen! The
@@ -35,32 +35,39 @@ makeLenses ''RNAensembleStructure
 
 -- | Cofolded structure.
 
-data RNAssDimer = RNAssDimer
-  { _rnassDimer     ∷ !ByteString
-  , _rnassDimerPos  ∷ !Int
+data RNAds = RNAds
+  { _rnadsL ∷ !ByteString
+  , _rnadsR ∷ !ByteString
   }
   deriving (Eq,Ord,Show,Read,Data,Typeable,Generic)
-makeLenses ''RNAssDimer
+makeLenses ''RNAds
 
--- -- | Only the left part of the dimer. Does *not* yield @RNAss@ since the
--- -- pairings might very well span the separating symbol.
--- 
--- rnassDimerL ∷ Iso' RNAssDimer ByteString
--- rnassDimerL = iso (\(RNAssDimer d p) → BS8.take p d) (
+-- | A Prism that turns ByteStrings with a single @&@ into @RNAds@.
 
--- rnassDimerR ∷ Iso' RNAssDimer → ByteString
+rnads ∷ Prism' ByteString RNAds
+rnads = prism (\(RNAds l r) → BS8.concat [l, "&", r])
+              (\s → case BS8.split '&' s of [l,r] → Right (RNAds l r) ; _ → Left s)
+{-# Inline rnads #-}
+
+-- | Isomorphism from @RNAds@ to @(RNAss,RNAss)@. The @RNAss@ are only
+-- legal if taken both: @rnassFromDimer . both@.
+
+rnads2rnassPair ∷ Iso' RNAds (RNAss, RNAss)
+rnads2rnassPair = iso (\(RNAds l r) → (RNAss l, RNAss r)) (\(RNAss l, RNAss r) → RNAds l r)
+{-# Inline rnads2rnassPair #-}
 
 -- | Try to create a dimeric structure.
 
-mkRNAssDimer ∷ (Monad m, MonadError RNAStructureError m) ⇒ ByteString → m RNAssDimer
-mkRNAssDimer q = BS8.findIndex (=='&') q & \case
-    Nothing  → throwError $ RNAStructureError "mkRNAssDimer: not a dimer" q
-    Just pos → do
+mkRNAds ∷ (Monad m, MonadError RNAStructureError m) ⇒ ByteString → m RNAds
+mkRNAds q = BS8.split '&' q & \case
+    [l,r] → do
       -- TODO can still fail with unmatched brackets.
-      return $ RNAssDimer
-        { _rnassDimer     = q
-        , _rnassDimerPos  = pos
+      return $ RNAds
+        { _rnadsL = l
+        , _rnadsR = r
         }
+    _     → throwError $ RNAStructureError "mkRNAds: not a dimer" q
+{-# Inline mkRNAds #-}
 
 -- | Capture what might be wrong with the RNAss.
 
