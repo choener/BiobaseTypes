@@ -5,7 +5,7 @@ module Biobase.Types.Sequence where
 
 import           Control.Lens
 import           Data.ByteString (ByteString)
-import           Data.Char (ord,chr)
+import           Data.Char (ord,chr,toUpper)
 import           Data.Data (Data)
 import           Data.Typeable (Typeable)
 import           GHC.Generics (Generic)
@@ -48,6 +48,13 @@ instance Ixed RNAseq where
   {-# Inline ix #-}
 
 deriving instance Reversing RNAseq
+
+mkRNAseq ∷ ByteString → RNAseq
+mkRNAseq = RNAseq . BS.map go . BS.map toUpper
+  where go x | x `elem` acgu = x
+             | otherwise     = 'N'
+        acgu ∷ String
+        acgu = "ACGU"
 
 
 
