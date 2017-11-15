@@ -8,6 +8,7 @@
 
 module Biobase.Types.Structure where
 
+import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.Error.Class
 import           Data.ByteString (ByteString)
@@ -24,6 +25,8 @@ newtype RNAss = RNAss { _rnass ∷ ByteString }
   deriving (Eq,Ord,Show,Read,Data,Typeable,Generic,Monoid)
 makeLenses ''RNAss
 
+instance NFData RNAss
+
 -- | Ensemble structure encoding. *Very* different type ctor name chosen! The
 -- structure of this string makes verification much more complicated.
 --
@@ -33,6 +36,8 @@ newtype RNAensembleStructure = RNAes { _rnaes ∷ ByteString }
   deriving (Eq,Ord,Show,Read,Data,Typeable,Generic)
 makeLenses ''RNAensembleStructure
 
+instance NFData RNAensembleStructure
+
 -- | Cofolded structure.
 
 data RNAds = RNAds
@@ -41,6 +46,8 @@ data RNAds = RNAds
   }
   deriving (Eq,Ord,Show,Read,Data,Typeable,Generic)
 makeLenses ''RNAds
+
+instance NFData RNAds
 
 -- | A Prism that turns ByteStrings with a single @&@ into @RNAds@.
 
@@ -75,7 +82,9 @@ data RNAStructureError = RNAStructureError
   { _rnaStructureError  ∷ String
   , _rnaOffender        ∷ ByteString
   }
-  deriving (Show)
+  deriving (Show,Generic)
+
+instance NFData RNAStructureError
 
 -- | Verifies that the given RNAss is properly formatted. Otherwise, error out.
 --

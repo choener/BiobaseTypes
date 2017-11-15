@@ -4,6 +4,7 @@
 module Biobase.Types.Sequence where
 
 import           Control.Lens
+import           Control.DeepSeq
 import           Data.ByteString (ByteString)
 import           Data.Char (ord,chr,toUpper)
 import           Data.Data (Data)
@@ -23,6 +24,8 @@ newtype SequenceID = SequenceID { _sequenceID ∷ ByteString }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''SequenceID
 
+instance NFData SequenceID
+
 -- | Convert to a string in a unicode-aware manner.
 
 sequenceIDstring ∷ Iso' SequenceID String
@@ -38,6 +41,8 @@ sequenceIDstring = sequenceID . iso BSU.toString BSU.fromString
 newtype RNAseq = RNAseq { _rnaseq ∷ ByteString }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''RNAseq
+
+instance NFData RNAseq
 
 type instance Index RNAseq = Int
 
@@ -66,6 +71,8 @@ mkRNAseq = RNAseq . BS.map go . BS.map toUpper
 newtype DNAseq = DNAseq { _dnaseq ∷ ByteString }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''DNAseq
+
+instance NFData DNAseq
 
 type instance Index DNAseq = Int
 
