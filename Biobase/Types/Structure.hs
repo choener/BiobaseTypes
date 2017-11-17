@@ -123,6 +123,13 @@ rnassPairSet (RNAss s2) = do
   return $ RNApset set
 {-# Inlinable rnassPairSet #-}
 
+-- | RNA pair set, but a transformation error calls @error@.
+
+rnassPairSet' ∷ RNAss → RNApset
+rnassPairSet' = either error id . rnassPairSet
+
+-- | Calculates the number of different base pairs betwwen two structures.
+
 pairDist ∷ RNApset → RNApset → Int
 pairDist (RNApset p1) (RNApset p2) = Set.size z1 + Set.size z2
   where i = Set.intersection p1 p2
