@@ -11,10 +11,14 @@ module Biobase.Types.Structure where
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.Error.Class
+import           Control.Monad (foldM,unless)
 import           Data.ByteString (ByteString)
 import           Data.Data
+import           Data.Set (Set)
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS8
+import qualified Data.List as L
+import qualified Data.Set as Set
 
 
 
@@ -95,4 +99,33 @@ instance NFData RNAStructureError
 verifyRNAss ∷ (Monad m, MonadError RNAStructureError m) ⇒ RNAss → m RNAss
 verifyRNAss ss = do
   return ss
+
+newtype RNApset = RNApset { _rnapset ∷ Set (Int,Int) }
+  deriving (Read,Show,Eq,Ord,Generic)
+makeLenses ''RNApset
+
+instance NFData RNApset
+
+-- | Transform an 'RNAss' into a set of base pairs @(i,j)@. The pairs are
+-- 0-based.
+
+rnassPairSet
+  ∷ (MonadError String m)
+  ⇒ RNAss
+  → m RNApset
+rnassPairSet (RNAss s2) = do
+  let go (set,ks  ) (i,'(') = return (set,i:ks)
+      go (set,i:is) (j,')') = return (Set.insert (i,j) set, is)
+      go (set,[]  ) (j,')') = throwError $ "unequal brackets in \"" ++ BS8.unpack s2 ++ "\" at position: " ++ show j
+      go (set,ks  ) (_,'.') = return (set,ks)
+  (set,ss) ← foldM go (Set.empty,[]) . L.zip [0..] $ BS8.unpack s2
+  unless (null ss) $ throwError $ "unequal brackets in \"" ++ BS8.unpack s2 ++ "\" with opening bracket(s): " ++ show ss
+  return $ RNApset set
+{-# Inlinable rnassPairSet #-}
+
+pairDist ∷ RNApset → RNApset → Int
+pairDist (RNApset p1) (RNApset p2) = Set.size z1 + Set.size z2
+  where i = Set.intersection p1 p2
+        z1 = p1 `Set.difference` i
+        z2 = p2 `Set.difference` i
 

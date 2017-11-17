@@ -40,6 +40,7 @@ library
                , cereal                   >= 0.4
                , cereal-text              >= 0.1
                , cereal-vector            >= 0.2
+               , containers
                , data-default             >= 0.5
                , deepseq                  >= 1.4
                , hashable                 >= 1.2
