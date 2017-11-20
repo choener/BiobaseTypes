@@ -12,6 +12,7 @@ import           Data.Typeable (Typeable)
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.UTF8 as BSU
+import           GHC.Exts (IsString(..))
 
 
 
@@ -21,7 +22,7 @@ import qualified Data.ByteString.UTF8 as BSU
 -- TODO Provide @Iso'@ for @Text@, too?
 
 newtype SequenceID = SequenceID { _sequenceID ∷ ByteString }
-  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
+  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show, IsString)
 makeLenses ''SequenceID
 
 instance NFData SequenceID
@@ -61,6 +62,9 @@ mkRNAseq = RNAseq . BS.map go . BS.map toUpper
         acgu ∷ String
         acgu = "ACGU"
 
+instance IsString RNAseq where
+  fromString = mkRNAseq . BS.pack
+
 
 
 -- | A short DNA sequence.
@@ -81,6 +85,16 @@ type instance IxValue DNAseq = Char
 instance Ixed DNAseq where
   ix k = dnaseq . ix k . iso (chr . fromIntegral) (fromIntegral . ord)
   {-# Inline ix #-}
+
+mkDNAseq ∷ ByteString → DNAseq
+mkDNAseq = DNAseq . BS.map go . BS.map toUpper
+  where go x | x `elem` acgt = x
+             | otherwise     = 'N'
+        acgt ∷ String
+        acgt = "ACGT"
+
+instance IsString DNAseq where
+  fromString = mkDNAseq . BS.pack
 
 deriving instance Reversing DNAseq
 
