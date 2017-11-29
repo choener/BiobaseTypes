@@ -71,6 +71,7 @@ library
     Biobase.Types.NumericalExtremes
     Biobase.Types.Odds
     Biobase.Types.Sequence
+    Biobase.Types.Shape
     Biobase.Types.Strand
     Biobase.Types.Structure
     Biobase.Types.Taxonomy
