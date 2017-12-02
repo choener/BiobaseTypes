@@ -58,6 +58,7 @@ library
                , vector-th-unbox          >= 0.2
                --
                , bimaps                   == 0.1.0.*
+               , ForestStructures         == 0.0.1.*
                , PrimitiveArray           == 0.8.0.*
   exposed-modules:
     Biobase.Types.Accession
