@@ -141,8 +141,8 @@ rnassSPForest (RNAss s2) = either throwError return $ parseOnly (mn <* endOfInpu
   where
     tree = SPT <$> char '(' <*> sm <*> char ')' <?> "SPT"
     uns  = SPR <$> takeWhile1 (=='.') <?> "SPR"
-    sm   = foldl1' SPJ <$> many1 (tree <|> uns) <?> "many1 SPT / SPR"
-    mn   = foldl' (\acc x → case acc of {SPE → x; a → SPJ a x}) SPE <$> many  (tree <|> uns) <?> "many0 SPT / SPR"
+    sm   = SPJ <$> many1 (tree <|> uns) <?> "many1 SPT / SPR"
+    mn   = (\case {[] → SPE; xs → SPJ xs}) <$> many  (tree <|> uns) <?> "many0 SPT / SPR"
 {-# Inlinable rnassSPForest #-}
 
 -- | Compactify such an SPForest. This means that all stems are now represented
@@ -152,9 +152,9 @@ compactifySPForest
   ∷ SPForest ByteString Char
   → SPForest ByteString ByteString
 compactifySPForest = go . second BS8.singleton
-  where go SPE       = SPE
-        go (SPR x)   = SPR x
-        go (SPJ l r) = SPJ (go l) (go r)
+  where go SPE      = SPE
+        go (SPR x)  = SPR x
+        go (SPJ xs) = SPJ (map go xs)
         go (SPT l (SPT l' t r') r) = go $ SPT (l <> l') t (r' <> r)
         go (SPT l t             r) = SPT l (go t) r
 

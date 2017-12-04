@@ -65,19 +65,19 @@ shapeForest
 shapeForest SL5 = go
   where
     go SPE = SPE
-    go (SPT _ ts _)
-      | SPE ← ts, SPR _ ← ts = SPT '[' SPE ']'
-      | SPR _ `SPJ` SPT l xs r ← ts = go (SPT l xs r)
-      | SPT l xs r `SPJ` SPR _ ← ts = go (SPT l xs r)
-      | SPR _ `SPJ` SPT l xs r `SPJ` SPR _ ← ts = go (SPT l xs r)
-      | otherwise = SPT '[' (go ts) ']'
-    go (SPR _) = error "should not be reached"
-    go (SPJ l r)
-      | SPE ← l, SPR _ ← l = go r
-      | SPE ← r, SPR _ ← r = go l
-      | SPT _ x _ ← l, SPT _ y _ ← r = go l `SPJ` go r
-      | SPT _ x _ ← l, SPJ y z ← r   = go l `SPJ` go (SPJ y z)
-      | SPJ x y ← l, SPT _ x _ ← r   = go (SPJ x y) `SPJ` go r
+    go (SPT _ xs _)
+      | SPE ← xs, SPR{} ← xs, [] ← ts = SPT '[' SPE ']'
+      | [t] ← ts = go t
+      | otherwise = SPT '[' (SPJ $ map go ts) ']'
+      where (SPJ ys) = xs
+            ts = [ t | t@SPT{} ← ys ]
+    -- should only happen on a single unfolded structure
+    go (SPR _) = SPR '_'
+    go (SPJ xs)
+      | [] ← ts   = SPR '_'
+      | [t] ← ts  = go t
+      | otherwise = SPJ $ map go ts
+      where ts = [ t | t@SPT{} ← xs ]
     go xs = error $ show xs ++ " should no be reached"
 
 -- | 
@@ -89,8 +89,8 @@ shapeForestshape = RNAshape SL5 . go
   where
     go SPE = ""
     go (SPT l x r) = BS8.singleton l <> go x <> BS8.singleton r
-    go (SPJ l   r) = go l <> go r
-    go (SPR   x  ) = error "should not be reached" -- BS8.singleton x
+    go (SPJ xs   ) = mconcat $ map go xs
+    go (SPR   x  ) = BS8.singleton x -- error "should not be reached" -- BS8.singleton x
 
 generateShape ∷ ShapeLevel → TS.RNAss → RNAshape
 generateShape = undefined
