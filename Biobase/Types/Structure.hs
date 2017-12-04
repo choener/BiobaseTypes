@@ -8,17 +8,25 @@
 
 module Biobase.Types.Structure where
 
+import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad.Error.Class
 import           Control.Monad (foldM,unless)
+import           Data.Attoparsec.ByteString.Char8
+import           Data.Attoparsec.Combinator
+import           Data.Bifunctor (second)
 import           Data.ByteString (ByteString)
 import           Data.Data
+import           Data.List (foldl1',foldl')
+import           Data.Monoid ((<>))
 import           Data.Set (Set)
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.List as L
 import qualified Data.Set as Set
+
+import           Data.Forest.StructuredPaired
 
 
 
@@ -122,6 +130,33 @@ rnassPairSet (RNAss s2) = do
   unless (null ss) $ throwError $ "unequal brackets in \"" ++ BS8.unpack s2 ++ "\" with opening bracket(s): " ++ show ss
   return $ RNApset set
 {-# Inlinable rnassPairSet #-}
+
+-- | Genereate a simple structured/paired forest from a secondary structure string.
+
+rnassSPForest
+  ∷ (MonadError String m)
+  ⇒ RNAss
+  → m (SPForest ByteString Char)
+rnassSPForest (RNAss s2) = either throwError return $ parseOnly (mn <* endOfInput) s2
+  where
+    tree = SPT <$> char '(' <*> sm <*> char ')' <?> "SPT"
+    uns  = SPR <$> takeWhile1 (=='.') <?> "SPR"
+    sm   = foldl1' SPJ <$> many1 (tree <|> uns) <?> "many1 SPT / SPR"
+    mn   = foldl' (\acc x → case acc of {SPE → x; a → SPJ a x}) SPE <$> many  (tree <|> uns) <?> "many0 SPT / SPR"
+{-# Inlinable rnassSPForest #-}
+
+-- | Compactify such an SPForest. This means that all stems are now represented
+-- by a single 'SPT' data constructor.
+
+compactifySPForest
+  ∷ SPForest ByteString Char
+  → SPForest ByteString ByteString
+compactifySPForest = go . second BS8.singleton
+  where go SPE       = SPE
+        go (SPR x)   = SPR x
+        go (SPJ l r) = SPJ (go l) (go r)
+        go (SPT l (SPT l' t r') r) = go $ SPT (l <> l') t (r' <> r)
+        go (SPT l t             r) = SPT l (go t) r
 
 -- | RNA pair set, but a transformation error calls @error@.
 

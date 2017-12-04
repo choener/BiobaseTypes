@@ -35,6 +35,7 @@ Extra-Source-Files:
 library
   build-depends: base                     >= 4.7      &&  < 5.0
                , aeson                    >= 0.8
+               , attoparsec               >= 0.13
                , binary                   >= 0.7
                , bytestring
                , cereal                   >= 0.4

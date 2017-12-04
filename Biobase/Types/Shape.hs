@@ -15,11 +15,15 @@ import           Control.Monad.Error.Class
 import           Control.Monad (foldM,unless)
 import           Data.ByteString (ByteString)
 import           Data.Data
+import           Data.List (foldl1')
+import           Data.Monoid ((<>))
 import           Data.Set (Set)
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.List as L
 import qualified Data.Set as Set
+
+import           Data.Forest.StructuredPaired
 
 import qualified Biobase.Types.Structure as TS
 
@@ -50,7 +54,43 @@ instance NFData RNAshape
 
 
 
+-- | Given a compactified 'SPForest', creates a shape forest of the given level.
+--
+-- TODO needs newtyping
+
+shapeForest
+  ∷ ShapeLevel
+  → SPForest ByteString ByteString
+  → SPForest Char Char
+shapeForest SL5 = go
+  where
+    go SPE = SPE
+    go (SPT _ ts _)
+      | SPE ← ts, SPR _ ← ts = SPT '[' SPE ']'
+      | SPR _ `SPJ` SPT l xs r ← ts = go (SPT l xs r)
+      | SPT l xs r `SPJ` SPR _ ← ts = go (SPT l xs r)
+      | SPR _ `SPJ` SPT l xs r `SPJ` SPR _ ← ts = go (SPT l xs r)
+      | otherwise = SPT '[' (go ts) ']'
+    go (SPR _) = error "should not be reached"
+    go (SPJ l r)
+      | SPE ← l, SPR _ ← l = go r
+      | SPE ← r, SPR _ ← r = go l
+      | SPT _ x _ ← l, SPT _ y _ ← r = go l `SPJ` go r
+      | SPT _ x _ ← l, SPJ y z ← r   = go l `SPJ` go (SPJ y z)
+      | SPJ x y ← l, SPT _ x _ ← r   = go (SPJ x y) `SPJ` go r
+    go xs = error $ show xs ++ " should no be reached"
+
 -- | 
+
+shapeForestshape
+  ∷ SPForest Char Char
+  → RNAshape
+shapeForestshape = RNAshape SL5 . go
+  where
+    go SPE = ""
+    go (SPT l x r) = BS8.singleton l <> go x <> BS8.singleton r
+    go (SPJ l   r) = go l <> go r
+    go (SPR   x  ) = error "should not be reached" -- BS8.singleton x
 
 generateShape ∷ ShapeLevel → TS.RNAss → RNAshape
 generateShape = undefined
