@@ -20,7 +20,6 @@ import Test.QuickCheck
 import Text.Printf
 
 import Data.PrimitiveArray.Index.Class
-import Data.PrimitiveArray.Vector.Compat
 
 
 

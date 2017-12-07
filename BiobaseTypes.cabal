@@ -60,7 +60,7 @@ library
                --
                , bimaps                   == 0.1.0.*
                , ForestStructures         == 0.0.1.*
-               , PrimitiveArray           == 0.8.0.*
+               , PrimitiveArray           == 0.9.0.*
   exposed-modules:
     Biobase.Types.Accession
     Biobase.Types.Bitscore

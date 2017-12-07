@@ -17,7 +17,6 @@ import           Test.QuickCheck
 import           Text.Printf
 
 import           Data.PrimitiveArray.Index.Class hiding (Index)
-import           Data.PrimitiveArray.Vector.Compat
 import qualified Data.PrimitiveArray.Index.Class as PA
 
 
@@ -67,12 +66,9 @@ derivingUnbox "Index"
   [t| forall t . Index t -> Int |]  [| getIndex |]  [| Index |]
 
 instance forall t . KnownNat t => PA.Index (Index t) where
-  linearIndex _ _ (Index z) = z
+  newtype LimitType (Index t) = LtIndex Int
+  linearIndex (LtIndex k) (Index z) = z
   {-# INLINE linearIndex #-}
-  smallestLinearIndex (Index l) = error "still needed?"
-  {-# INLINE smallestLinearIndex #-}
-  largestLinearIndex (Index h) = h
-  {-# INLINE largestLinearIndex #-}
   size (_) (Index h) = h + 1
   {-# INLINE size #-}
   inBounds (_) (Index h) (Index x) = 0<=x && x<=h
