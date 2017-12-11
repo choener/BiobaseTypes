@@ -13,7 +13,7 @@ import Data.Aeson
 import Data.Binary
 import Data.Hashable (Hashable)
 import Data.Serialize (Serialize)
-import Data.Vector.Fusion.Stream.Monadic (Step(..))
+import Data.Vector.Fusion.Stream.Monadic (Step(..), flatten)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
 import Test.QuickCheck
@@ -68,19 +68,22 @@ derivingUnbox "Strand"
   [t| Strand -> Int |]  [| getStrand |]  [| Strand |]
 
 instance Index Strand where
-  linearIndex _ _ (Strand z) = z
+  newtype (LimitType Strand) = LtStrand Strand
+  linearIndex _ (Strand z) = z
   {-# INLINE linearIndex #-}
-  smallestLinearIndex (Strand l) = error "still needed?"
-  {-# INLINE smallestLinearIndex #-}
-  largestLinearIndex (Strand h) = h
-  {-# INLINE largestLinearIndex #-}
-  size (_) (Strand h) = h + 1
+  size (LtStrand (Strand h)) = h + 1
   {-# INLINE size #-}
-  inBounds (_) (Strand h) (Strand x) = 0<=x && x<=h
+  inBounds (LtStrand (Strand h)) (Strand x) = 0<=x && x<=h
   {-# INLINE inBounds #-}
+  zeroBound = Strand 0
+  {-# Inline zeroBound #-}
+  zeroBound' = LtStrand zeroBound
+  {-# Inline zeroBound' #-}
+  sizeIsValid (LtStrand (Strand k)) = True
+  {-# Inline sizeIsValid #-}
 
 instance IndexStream z => IndexStream (z:.Strand) where
-  streamUp (ls:.Strand lf) (hs:.Strand ht) = flatten mk step $ streamUp ls hs
+  streamUp (ls:..LtStrand (Strand lf)) (hs:..LtStrand (Strand ht)) = flatten mk step $ streamUp ls hs
     where mk z = return (z,lf)
           step (z,k)
             | k > ht    = return $ Done
@@ -88,7 +91,7 @@ instance IndexStream z => IndexStream (z:.Strand) where
           {-# Inline [0] mk   #-}
           {-# Inline [0] step #-}
   {-# Inline streamUp #-}
-  streamDown (ls:.Strand lf) (hs:.Strand ht) = flatten mk step $ streamDown ls hs
+  streamDown (ls:..LtStrand (Strand lf)) (hs:..LtStrand (Strand ht)) = flatten mk step $ streamDown ls hs
     where mk z = return (z,ht)
           step (z,k)
             | k < lf    = return $ Done

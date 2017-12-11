@@ -8,7 +8,7 @@ import           Data.Binary
 import           Data.Hashable (Hashable)
 import           Data.Proxy
 import           Data.Serialize (Serialize)
-import           Data.Vector.Fusion.Stream.Monadic (Step(..))
+import           Data.Vector.Fusion.Stream.Monadic (Step(..), flatten)
 import           Data.Vector.Unboxed.Deriving
 import           GHC.Generics
 import           GHC.TypeLits
@@ -69,13 +69,19 @@ instance forall t . KnownNat t => PA.Index (Index t) where
   newtype LimitType (Index t) = LtIndex Int
   linearIndex (LtIndex k) (Index z) = z
   {-# INLINE linearIndex #-}
-  size (_) (Index h) = h + 1
+  size (LtIndex h) = h + 1
   {-# INLINE size #-}
-  inBounds (_) (Index h) (Index x) = 0<=x && x<=h
+  inBounds (LtIndex h) (Index x) = 0<=x && x<=h
   {-# INLINE inBounds #-}
+  zeroBound = Index 0
+  {-# Inline zeroBound #-}
+  zeroBound' = LtIndex 0
+  {-# Inline zeroBound' #-}
+  sizeIsValid (LtIndex k) = k <= maxBound
+  {-# Inline sizeIsValid #-}
 
-instance IndexStream z => IndexStream (z:.Index t) where
-  streamUp (ls:.Index lf) (hs:.Index ht) = flatten mk step $ streamUp ls hs
+instance (KnownNat t, IndexStream z) ⇒ IndexStream (z:.Index t) where
+  streamUp (ls:..LtIndex lf) (hs:..LtIndex ht) = flatten mk step $ streamUp ls hs
     where mk z = return (z,lf)
           step (z,k)
             | k > ht    = return $ Done
@@ -83,7 +89,7 @@ instance IndexStream z => IndexStream (z:.Index t) where
           {-# Inline [0] mk   #-}
           {-# Inline [0] step #-}
   {-# Inline streamUp #-}
-  streamDown (ls:.Index lf) (hs:.Index ht) = flatten mk step $ streamDown ls hs
+  streamDown (ls:..LtIndex lf) (hs:..LtIndex ht) = flatten mk step $ streamDown ls hs
     where mk z = return (z,ht)
           step (z,k)
             | k < lf    = return $ Done
@@ -92,7 +98,7 @@ instance IndexStream z => IndexStream (z:.Index t) where
           {-# Inline [0] step #-}
   {-# Inline streamDown #-}
 
-instance IndexStream (Index t)
+instance (KnownNat t) ⇒ IndexStream (Index t)
 
 instance Arbitrary (Index t) where
   arbitrary = Index <$> arbitrary
