@@ -20,19 +20,19 @@ import GHC.Generics (Generic)
 --
 -- TODO Might move up even higher into statistics modules.
 
-newtype DLO = DLO { getDLO :: Int }
-  deriving (Generic,Eq,Ord,Show,Read)
+newtype DiscretizedLogOdds = DLO { getDLO :: Int }
+  deriving (Generic,Eq,Ord,Show,Read,Num)
 
-derivingUnbox "DLO"
-  [t| DLO -> Int |]  [| getDLO |]  [| DLO |]
+derivingUnbox "DiscretizedLogOdds"
+  [t| DiscretizedLogOdds -> Int |]  [| getDLO |]  [| DLO |]
 
-instance Binary    DLO
-instance Serialize DLO
-instance FromJSON  DLO
-instance ToJSON    DLO
-instance Hashable  DLO
+instance Binary    DiscretizedLogOdds
+instance Serialize DiscretizedLogOdds
+instance FromJSON  DiscretizedLogOdds
+instance ToJSON    DiscretizedLogOdds
+instance Hashable  DiscretizedLogOdds
 
-instance NFData DLO where
+instance NFData DiscretizedLogOdds where
   rnf (DLO k) = rnf k
   {-# Inline rnf #-}
 
