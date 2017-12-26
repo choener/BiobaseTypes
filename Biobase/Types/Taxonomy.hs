@@ -23,6 +23,8 @@ import Biobase.Types.Names (SpeciesName, TaxonomicRank)
 
 -- | Taxonomic classification. @Enum@ together with a final @Unknown@ is
 -- somewhat fishy.
+--
+-- TODO What should the order be? Kingdom > Species or Kingdom < Species?
 
 data Classification
   = Kingdom
