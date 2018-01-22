@@ -26,7 +26,9 @@ import           Data.Set (Set)
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.List as L
+import qualified Data.Set as S
 import qualified Data.Set as Set
+import qualified Test.QuickCheck as Q
 
 import           Data.Forest.StructuredPaired
 
@@ -110,7 +112,14 @@ verifyRNAss ∷ (Monad m, MonadError RNAStructureError m) ⇒ RNAss → m RNAss
 verifyRNAss ss = do
   return ss
 
-newtype RNApset = RNApset { _rnapset ∷ Set (Int,Int) }
+-- | The set of nucleotide pairs, together with the sequence length.
+
+data RNApset = RNApset
+  { _rnapset      ∷ !(Set (Int,Int))
+    -- ^ the set of nucleotide pairs.
+  , _rnapsetSLen  ∷ !Int
+    -- ^ length of the underlying nucleotide sequence.
+  }
   deriving (Read,Show,Eq,Ord,Generic)
 makeLenses ''RNApset
 
@@ -130,7 +139,7 @@ rnassPairSet (RNAss s2) = do
       go (set,ks  ) (_,'.') = return (set,ks)
   (set,ss) ← foldM go (Set.empty,[]) . L.zip [0..] $ BS8.unpack s2
   unless (null ss) $ throwError $ "unequal brackets in \"" ++ BS8.unpack s2 ++ "\" with opening bracket(s): " ++ show ss
-  return $ RNApset set
+  return $ RNApset set (BS8.length s2)
 {-# Inlinable rnassPairSet #-}
 
 -- | Genereate a simple structured/paired forest from a secondary structure string.
@@ -166,11 +175,33 @@ compactifySPForest = go . second BS8.singleton
 rnassPairSet' ∷ RNAss → RNApset
 rnassPairSet' = either error id . rnassPairSet
 
--- | Calculates the number of different base pairs betwwen two structures.
+-- | Calculates the number of different base pairs between two structures. This
+-- ignores the length of the underlying sequences.
 
 pairDist ∷ RNApset → RNApset → Int
-pairDist (RNApset p1) (RNApset p2) = Set.size z1 + Set.size z2
+pairDist (RNApset p1 _) (RNApset p2 _) = Set.size z1 + Set.size z2
   where i = Set.intersection p1 p2
         z1 = p1 `Set.difference` i
         z2 = p2 `Set.difference` i
+
+
+
+-- * Arbitrary instances. This only creates legal instances, but does *not*
+-- take into account ViennaRNA rules like three unpaired nucleotides in the
+-- hairpin.
+--
+-- TODO @shrink@ is a bit more complicated, but can be done via a set of pairs.
+
+instance Q.Arbitrary RNApset where
+  arbitrary = do
+    -- generate RNA structures between 0 and 100 nucleotides.
+    l ∷ Int ← Q.choose (0,100)
+    -- Given left and right bounds, create pairs.
+    let go ∷ Int → Int → Q.Gen (Set (Int,Int))
+        go l r
+          | l >= r    = return S.empty
+          | otherwise = do
+            stack ← undefined
+            return undefined
+    return undefined
 

@@ -113,6 +113,8 @@ shapeForest = preStem
 
 -- | turn into unit test. also reverse of the input should give reverse shape!
 -- this then gives a quickcheck test, reversing the input should reverse the shape
+--
+-- TODO requires generating secondary structures via @Arbitrary@.
 
 test lvl = shapeForestshape . shapeForest lvl $ TS.compactifySPForest $ either error id $ TS.rnassSPForest $ TS.RNAss "(((((...(((..(((...))))))...(((..((.....))..)))))))).."
 
