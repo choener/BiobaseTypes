@@ -29,8 +29,9 @@ import qualified Biobase.Types.Structure as TS
 
 
 
--- | Shape levels are hardcoded according to their specification. Allow
--- compile-time check on accepted shape levels.
+-- | Shape levels are hardcoded according to their specification.
+--
+-- TODO Allow compile-time check on accepted shape levels?
 
 data ShapeLevel
   = SL1
@@ -44,9 +45,15 @@ instance NFData ShapeLevel
 
 
 
--- |
+-- | The type of RNA shapes. Keeps the type 
 
-data RNAshape = RNAshape { _rnashapelevel ∷ ShapeLevel, _rnashape ∷ ByteString }
+data RNAshape
+  = RNAshape
+    { _rnashapelevel  ∷ !ShapeLevel
+    -- ^ The type of shape encoded here.
+    , _rnashape       ∷ !ByteString
+    -- ^ The actual shape as a string.
+    }
   deriving (Eq,Ord,Show,Read,Data,Typeable,Generic)
 makeLenses ''RNAshape
 
@@ -56,12 +63,60 @@ instance NFData RNAshape
 
 -- | Given a compactified 'SPForest', creates a shape forest of the given level.
 --
+--
+--
 -- TODO needs newtyping
 
 shapeForest
   ∷ ShapeLevel
   → SPForest ByteString ByteString
   → SPForest Char Char
+shapeForest = preStem
+  where
+    -- | In @preStem@, we aim to close in on the next stem. @SPE@ means that we
+    -- reached an end in a stem.
+    preStem s SPE = SPE
+    -- | The start of a tree structure. The forest is compact, which means that
+    -- the element in @xs@ is, by definition, not a continuation of a stack.
+    preStem s (SPT _ xs _) = SPT '[' (inStem s xs) ']'
+    -- |
+    preStem s spr@(SPR rs) = inStem s spr -- = error $ "preStem/SPR " ++ show rs
+    -- |
+    preStem s (SPJ xs)
+      | [x] ← xs  = preStem s x
+      -- left bulge
+      | [l@SPR{},x@SPT{}] ← xs = if s <= SL2 then (SPJ [SPR '_', preStem s x]) else preStem s x
+      -- right bulge
+      | [x@SPT{},r@SPR{}] ← xs = if s <= SL2 then (SPJ [preStem s x, SPR '_']) else preStem s x
+      | otherwise = SPJ $ map (preStem s) xs -- error $ "preStem/SPJ " ++ show xs
+    --
+    -- | After a stem, there could be an @SPE@ element.
+    inStem s SPE = SPE
+    -- | This case happens when eradicating unstructured regions with high
+    -- abstraction levels.
+    inStem s (SPT _ xs _) = inStem s xs
+    inStem s (SPR rs)
+      | s == SL1  = SPR '_' -- = error $ "inStem / SPR " ++ show rs
+      | otherwise = SPE
+    inStem s (SPJ xs)
+      | [x] ← xs = error "x"
+      -- left bulge
+      | [l@SPR{},x] ← xs = if s <= SL3 then preStem s (SPJ xs) else inStem s x
+      -- right bulge
+      | [x,r@SPR{}] ← xs = if s <= SL3 then preStem s (SPJ xs) else inStem s x
+      -- interior loop
+      | [l@SPR{},x,r@SPR{}] ← xs = if s == SL5 then inStem s x else preStem s (SPJ xs)
+--      | s == SL1  = error $ "inStem / SPJ " ++ show xs
+--      | s == SL2  = error $ "inStem / SPJ " ++ show xs
+      -- multibranched loop
+      | otherwise = SPJ $ map (preStem s) xs
+
+-- | turn into unit test. also reverse of the input should give reverse shape!
+-- this then gives a quickcheck test, reversing the input should reverse the shape
+
+test lvl = shapeForestshape . shapeForest lvl $ TS.compactifySPForest $ either error id $ TS.rnassSPForest $ TS.RNAss "(((((...(((..(((...))))))...(((..((.....))..)))))))).."
+
+{-
 shapeForest SL5 = go
   where
     go SPE = SPE
@@ -79,6 +134,7 @@ shapeForest SL5 = go
       | otherwise = SPJ $ map go ts
       where ts = [ t | t@SPT{} ← xs ]
     go xs = error $ show xs ++ " should no be reached"
+-}
 
 -- | 
 

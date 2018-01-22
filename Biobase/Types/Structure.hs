@@ -5,6 +5,8 @@
 --
 -- TODO Consider where to move each type. There are merge possibilities between
 -- BiobaseXNA and BiobaseTypes.
+--
+-- TODO QuickCheck @Arbitrary@ for @RNAss@.
 
 module Biobase.Types.Structure where
 
@@ -137,12 +139,12 @@ rnassSPForest
   ∷ (MonadError String m)
   ⇒ RNAss
   → m (SPForest ByteString Char)
-rnassSPForest (RNAss s2) = either throwError return $ parseOnly (mn <* endOfInput) s2
+rnassSPForest (RNAss s2) = either throwError return $ parseOnly (manyElems <* endOfInput) s2
   where
-    tree = SPT <$> char '(' <*> sm <*> char ')' <?> "SPT"
-    uns  = SPR <$> takeWhile1 (=='.') <?> "SPR"
-    sm   = SPJ <$> many1 (tree <|> uns) <?> "many1 SPT / SPR"
-    mn   = (\case {[] → SPE; xs → SPJ xs}) <$> many  (tree <|> uns) <?> "many0 SPT / SPR"
+    tree = SPT <$> char '(' <*> someElems <*> char ')' <?> "SPT"
+    unpaired  = SPR <$> takeWhile1 (=='.') <?> "SPR"
+    someElems = SPJ <$> many1 (tree <|> unpaired) <?> "many1 SPT / SPR"
+    manyElems = (\case {[] → SPE; xs → SPJ xs}) <$> many  (tree <|> unpaired) <?> "many0 SPT / SPR"
 {-# Inlinable rnassSPForest #-}
 
 -- | Compactify such an SPForest. This means that all stems are now represented
@@ -155,6 +157,7 @@ compactifySPForest = go . second BS8.singleton
   where go SPE      = SPE
         go (SPR x)  = SPR x
         go (SPJ xs) = SPJ (map go xs)
+        go (SPT l (SPJ [x]) r) = go $ SPT l x r
         go (SPT l (SPT l' t r') r) = go $ SPT (l <> l') t (r' <> r)
         go (SPT l t             r) = SPT l (go t) r
 
