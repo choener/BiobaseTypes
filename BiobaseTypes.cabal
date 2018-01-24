@@ -96,6 +96,7 @@ library
                     , TemplateHaskell
                     , TypeFamilies
                     , TypeOperators
+                    , TupleSections
                     , UnicodeSyntax
   ghc-options:
     -O2 -funbox-strict-fields
@@ -116,6 +117,8 @@ test-suite properties
   default-extensions: ScopedTypeVariables
                     , TemplateHaskell
   build-depends: base
+               , bytestring
+               , lens
                , QuickCheck
                , tasty              >= 0.11
                , tasty-quickcheck   >= 0.8

@@ -111,6 +111,9 @@ shapeForest = preStem
       -- multibranched loop
       | otherwise = SPJ $ map (preStem s) xs
 
+rnass2shape lvl s = shapeForestshape . shapeForest lvl . TS.compactifySPForest
+                . either (\e → error $ show (e,s)) id . TS.rnassSPForest $ s
+
 -- | turn into unit test. also reverse of the input should give reverse shape!
 -- this then gives a quickcheck test, reversing the input should reverse the shape
 --

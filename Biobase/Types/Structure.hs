@@ -28,6 +28,7 @@ import qualified Data.ByteString.Char8 as BS8
 import qualified Data.List as L
 import qualified Data.Set as S
 import qualified Data.Set as Set
+import qualified Data.Vector.Unboxed as VU
 import qualified Test.QuickCheck as Q
 
 import           Data.Forest.StructuredPaired
@@ -175,6 +176,12 @@ compactifySPForest = go . second BS8.singleton
 rnassPairSet' ∷ RNAss → RNApset
 rnassPairSet' = either error id . rnassPairSet
 
+rnapsetRNAss ∷ RNApset → RNAss
+rnapsetRNAss (RNApset ps l) = RNAss $ BS8.pack $ VU.toList xs
+  where xs = VU.replicate l '.' VU.// ls VU.// rs
+        ls = L.map ((,'(') . fst) $ S.toList ps
+        rs = L.map ((,')') . snd) $ S.toList ps
+
 -- | Calculates the number of different base pairs between two structures. This
 -- ignores the length of the underlying sequences.
 
@@ -194,14 +201,25 @@ pairDist (RNApset p1 _) (RNApset p2 _) = Set.size z1 + Set.size z2
 
 instance Q.Arbitrary RNApset where
   arbitrary = do
-    -- generate RNA structures between 0 and 100 nucleotides.
-    l ∷ Int ← Q.choose (0,100)
     -- Given left and right bounds, create pairs.
     let go ∷ Int → Int → Q.Gen (Set (Int,Int))
         go l r
           | l >= r    = return S.empty
           | otherwise = do
-            stack ← undefined
-            return undefined
-    return undefined
+            -- right border of stack
+            c ∷ Int ← Q.oneof [ Q.choose (l+1,r)  -- wide jump
+                              , Q.choose (l+1, min r $ l+20)  -- short jump
+                              ]
+            -- with @1..10@ stack length
+            z ∷ Int ← Q.choose (0,5)
+            let stack = S.fromList [(l+k,c-k) | k ← [0..z-1], l+k+1 < c-k]
+            right ← go (c+1) r
+            return $ S.union stack right
+    -- generate RNA structures between 0 and 100 nucleotides.
+    l ∷ Int ← Q.choose (0,199)
+    s ← go 0 l
+    return $ RNApset s (l+1)
+
+instance Q.Arbitrary RNAss where
+  arbitrary = rnapsetRNAss <$> Q.arbitrary
 

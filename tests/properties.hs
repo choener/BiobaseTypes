@@ -1,6 +1,9 @@
 
 module Main where
 
+import           Control.Lens
+import           Debug.Trace
+import qualified Data.ByteString.Char8 as BS8
 import           Test.QuickCheck.Modifiers
 import           Test.QuickCheck.Property
 import           Test.Tasty
@@ -9,6 +12,8 @@ import           Test.Tasty.TH
 
 import           Biobase.Types.Bitscore
 import           Biobase.Types.NumericalExtremes
+import           Biobase.Types.Shape
+import           Biobase.Types.Structure
 
 
 
@@ -27,6 +32,24 @@ prop_ProbScore (Positive null) (Positive x) = x ~= score2Prob null (prob2Score n
 -- ** quickcheck
 
 -- | reversing a secondary structure means reversing the shape
+
+prop_StructureShape_5_Reverse = fun_StructureShape_k_Reverse SL5
+prop_StructureShape_4_Reverse = fun_StructureShape_k_Reverse SL4
+prop_StructureShape_3_Reverse = fun_StructureShape_k_Reverse SL3
+prop_StructureShape_2_Reverse = fun_StructureShape_k_Reverse SL2
+prop_StructureShape_1_Reverse = fun_StructureShape_k_Reverse SL1
+
+fun_StructureShape_k_Reverse lvl rnass@(RNAss s2)
+  | shp == fshp = True
+  | otherwise = traceShow (s2,shp,rshp,fshp) False
+  where shp  = rnass2shape lvl rnass
+        rshp = rnass2shape lvl $ RNAss $ BS8.map flp $ BS8.reverse s2
+        fshp = over rnashape (BS8.map flp . BS8.reverse) rshp
+        flp '(' = ')'
+        flp ')' = '('
+        flp '[' = ']'
+        flp ']' = '['
+        flp x   = x
 
 
 
