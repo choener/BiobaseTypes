@@ -111,7 +111,7 @@ shapeForest = preStem
       -- multibranched loop
       | otherwise = SPJ $ map (preStem s) xs
 
-rnass2shape lvl s = shapeForestshape . shapeForest lvl . TS.compactifySPForest
+rnass2shape lvl s = shapeForestshape lvl . shapeForest lvl . TS.compactifySPForest
                 . either (\e → error $ show (e,s)) id . TS.rnassSPForest $ s
 
 -- | turn into unit test. also reverse of the input should give reverse shape!
@@ -119,7 +119,7 @@ rnass2shape lvl s = shapeForestshape . shapeForest lvl . TS.compactifySPForest
 --
 -- TODO requires generating secondary structures via @Arbitrary@.
 
-test lvl = shapeForestshape . shapeForest lvl $ TS.compactifySPForest $ either error id $ TS.rnassSPForest $ TS.RNAss "(((((...(((..(((...))))))...(((..((.....))..)))))))).."
+test lvl = shapeForestshape lvl . shapeForest lvl $ TS.compactifySPForest $ either error id $ TS.rnassSPForest $ TS.RNAss "(((((...(((..(((...))))))...(((..((.....))..)))))))).."
 
 {-
 shapeForest SL5 = go
@@ -144,9 +144,10 @@ shapeForest SL5 = go
 -- | 
 
 shapeForestshape
-  ∷ SPForest Char Char
+  ∷ ShapeLevel
+  → SPForest Char Char
   → RNAshape
-shapeForestshape = RNAshape SL5 . go
+shapeForestshape lvl = RNAshape lvl . go
   where
     go SPE = ""
     go (SPT l x r) = BS8.singleton l <> go x <> BS8.singleton r
