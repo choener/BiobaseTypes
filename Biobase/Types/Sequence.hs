@@ -3,16 +3,18 @@
 
 module Biobase.Types.Sequence where
 
-import           Control.Lens
 import           Control.DeepSeq
+import           Control.Lens
 import           Data.ByteString (ByteString)
 import           Data.Char (ord,chr,toUpper)
 import           Data.Data (Data)
 import           Data.Typeable (Typeable)
+import           GHC.Exts (IsString(..))
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.UTF8 as BSU
-import           GHC.Exts (IsString(..))
+import           Test.QuickCheck (Arbitrary(..))
+import qualified Test.QuickCheck as TQ
 
 
 
@@ -65,6 +67,13 @@ mkRNAseq = RNAseq . BS.map go . BS.map toUpper
 instance IsString RNAseq where
   fromString = mkRNAseq . BS.pack
 
+instance Arbitrary RNAseq where
+  arbitrary = do
+    k ← TQ.choose (0,100)
+    xs ← TQ.vectorOf k $ TQ.elements "ACGU"
+    return . RNAseq $ BS.pack xs
+  shrink = view (to shrink)
+
 
 
 -- | A short DNA sequence.
@@ -97,6 +106,13 @@ instance IsString DNAseq where
   fromString = mkDNAseq . BS.pack
 
 deriving instance Reversing DNAseq
+
+instance Arbitrary DNAseq where
+  arbitrary = do
+    k ← TQ.choose (0,100)
+    xs ← TQ.vectorOf k $ TQ.elements "ACGT"
+    return . DNAseq $ BS.pack xs
+  shrink = view (to shrink)
 
 -- | Simple case translation from @U@ to @T@. with upper and lower-case
 -- awareness.

@@ -12,6 +12,7 @@ import           Test.Tasty.TH
 
 import           Biobase.Types.Bitscore
 import           Biobase.Types.NumericalExtremes
+import           Biobase.Types.Sequence
 import           Biobase.Types.Shape
 import           Biobase.Types.Structure
 
@@ -24,6 +25,18 @@ prop_ProbScore (Positive null) (Positive x) = x ~= score2Prob null (prob2Score n
 --prop_ScoreProb (Positive null) x = Bitscore x ~= prob2Score null (score2Prob null $ Bitscore x)
 
 
+
+-- * sequence properties
+
+-- complement twice
+
+prop_complement_twice_DNA (dna ∷ DNAseq) = dna == dna^.complement.complement
+
+prop_complement_twice_RNA (rna ∷ RNAseq) = rna == rna^.complement.complement
+
+prop_transcribe_twice_DNA (dna ∷ DNAseq) = dna == dna^.transcribe.transcribe
+
+--prop_transcribe_twice_DNA (rna ∷ RNAseq) = rna == rna^.transcribe.transcribe
 
 -- * shape properties
 
