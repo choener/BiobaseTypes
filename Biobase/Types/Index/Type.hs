@@ -9,6 +9,7 @@ import           Data.Hashable (Hashable)
 import           Data.Proxy
 import           Data.Serialize (Serialize)
 import           Data.Vector.Fusion.Stream.Monadic (Step(..), flatten)
+import qualified Data.Vector.Fusion.Stream.Monadic as SM
 import           Data.Vector.Unboxed.Deriving
 import           GHC.Generics
 import           GHC.TypeLits
@@ -77,8 +78,8 @@ instance forall t . KnownNat t => PA.Index (Index t) where
   {-# Inline zeroBound #-}
   zeroBound' = LtIndex 0
   {-# Inline zeroBound' #-}
-  sizeIsValid (LtIndex k) = k <= maxBound
-  {-# Inline sizeIsValid #-}
+  totalSize (LtIndex k) = [fromIntegral k]
+  {-# Inline totalSize #-}
 
 instance (KnownNat t, IndexStream z) ⇒ IndexStream (z:.Index t) where
   streamUp (ls:..LtIndex lf) (hs:..LtIndex ht) = flatten mk step $ streamUp ls hs
@@ -98,7 +99,11 @@ instance (KnownNat t, IndexStream z) ⇒ IndexStream (z:.Index t) where
           {-# Inline [0] step #-}
   {-# Inline streamDown #-}
 
-instance (KnownNat t) ⇒ IndexStream (Index t)
+instance (KnownNat t) ⇒ IndexStream (Index t) where
+  streamUp l h = SM.map (\(Z:.i) -> i) $ streamUp (ZZ:..l) (ZZ:..h)
+  {-# INLINE streamUp #-}
+  streamDown l h = SM.map (\(Z:.i) -> i) $ streamDown (ZZ:..l) (ZZ:..h)
+  {-# INLINE streamDown #-}
 
 instance Arbitrary (Index t) where
   arbitrary = Index <$> arbitrary
