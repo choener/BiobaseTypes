@@ -71,7 +71,6 @@ library
     Biobase.Types.Names
     Biobase.Types.Names.Internal
     Biobase.Types.NumericalExtremes
-    Biobase.Types.Odds
     Biobase.Types.Sequence
     Biobase.Types.Shape
     Biobase.Types.Strand
