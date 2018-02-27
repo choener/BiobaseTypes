@@ -11,7 +11,6 @@ import           Test.Tasty.QuickCheck (testProperty)
 import           Test.Tasty.TH
 
 import           Biobase.Types.Bitscore
-import           Biobase.Types.NumericalExtremes
 import           Biobase.Types.Sequence
 import           Biobase.Types.Shape
 import           Biobase.Types.Structure

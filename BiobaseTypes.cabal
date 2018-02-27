@@ -20,8 +20,6 @@ description:
                 .
                 * energies
                 .
-                * numerics
-                .
                 * biostring wrappers
 
 
@@ -61,6 +59,7 @@ library
                , bimaps                   == 0.1.0.*
                , ForestStructures         == 0.0.1.*
                , PrimitiveArray           == 0.9.0.*
+               , SciBaseTypes             == 0.0.0.*
   exposed-modules:
     Biobase.Types.Accession
     Biobase.Types.Bitscore
@@ -70,7 +69,6 @@ library
     Biobase.Types.Index.Type
     Biobase.Types.Names
     Biobase.Types.Names.Internal
-    Biobase.Types.NumericalExtremes
     Biobase.Types.Sequence
     Biobase.Types.Shape
     Biobase.Types.Strand

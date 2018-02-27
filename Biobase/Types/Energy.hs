@@ -17,7 +17,7 @@ import Data.Serialize (Serialize)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
 
-import Biobase.Types.NumericalExtremes
+import Numeric.Limits
 
 
 
@@ -44,11 +44,11 @@ instance FromJSON  DG
 instance ToJSON    DG
 instance NFData    DG
 
-deriving instance NumericalExtremes DG
-deriving instance NumericalEpsilon  DG
+deriving instance NumericLimits DG
+deriving instance NumericEpsilon  DG
 
 instance Default DG where
-  def = maxLarge
+  def = maxFinite / 100
   {-# Inline def #-}
 
 
@@ -56,7 +56,7 @@ instance Default DG where
 -- | @round $ DG / 100@.
 
 newtype DeltaDekaGibbs = DekaG { getDekaG :: Int }
-  deriving (Eq,Ord,Num,Read,Show,Generic)
+  deriving (Eq,Ord,Num,Read,Show,Generic,Integral,Real,Enum)
 
 
 
@@ -70,9 +70,9 @@ instance FromJSON  DeltaDekaGibbs
 instance ToJSON    DeltaDekaGibbs
 instance NFData    DeltaDekaGibbs
 
-deriving instance NumericalExtremes DeltaDekaGibbs
+deriving instance NumericLimits DeltaDekaGibbs
 
 instance Default DeltaDekaGibbs where
-  def = maxLarge
+  def = maxFinite `div` 100
   {-# Inline def #-}
 

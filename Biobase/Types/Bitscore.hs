@@ -26,7 +26,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 
-import           Biobase.Types.NumericalExtremes
+import           Numeric.Limits
 
 
 
@@ -48,7 +48,7 @@ instance Serialize Bitscore
 instance ToJSON    Bitscore
 instance NFData    Bitscore
 
-deriving instance NumericalExtremes Bitscore
+deriving instance NumericLimits Bitscore
 
 derivingUnbox "Bitscore"
   [t| Bitscore -> Double |] [| getBitscore |] [| Bitscore |]
@@ -58,7 +58,7 @@ derivingUnbox "Bitscore"
 -- TODO Check out the different "defaults" Infernal uses
 
 instance Default Bitscore where
-  def = Bitscore minLarge
+  def = Bitscore minFinite / 100
   {-# Inline def #-}
 
 -- | Given a null model and a probability, calculate the corresponding
@@ -68,7 +68,7 @@ instance Default Bitscore where
 
 prob2Score :: Double -> Double -> Bitscore
 prob2Score null x
-  | x==0      = minLarge
+  | x==0      = minFinite / 100
   | otherwise = Bitscore $ log (x/null) / log 2
 {-# Inline prob2Score #-}
 
@@ -76,7 +76,7 @@ prob2Score null x
 
 score2Prob :: Double -> Bitscore -> Double
 score2Prob null (Bitscore x)
-  | x <= minLarge = 0
+  | x <= minFinite / 100 = 0
   | otherwise     = null * exp (x * log 2)
 {-# Inline score2Prob #-}
 

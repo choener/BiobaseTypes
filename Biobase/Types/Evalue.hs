@@ -21,7 +21,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 
-import           Biobase.Types.NumericalExtremes
+import           Numeric.Limits
 
 
 
@@ -46,17 +46,9 @@ instance Default Evalue where
   def = Evalue 0
   {-# Inline def #-}
 
-instance NumericalExtremes Evalue where
+instance NumericLimits Evalue where
   maxFinite   = Evalue maxFinite
   minFinite   = Evalue 0
-  maxExtreme  = Evalue maxExtreme
-  minExtreme  = Evalue epsilon
-  maxLarge    = Evalue maxLarge
-  minLarge    = Evalue (2.2e-15)
   {-# Inline maxFinite  #-}
   {-# Inline minFinite  #-}
-  {-# Inline maxExtreme #-}
-  {-# Inline minExtreme #-}
-  {-# Inline maxLarge   #-}
-  {-# Inline minLarge   #-}
 
