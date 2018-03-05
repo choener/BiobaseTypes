@@ -1,7 +1,7 @@
 
 -- | Wrappers around biosequences.
 
-module Biobase.Types.Sequence where
+module Biobase.Types.NucleotideSequence where
 
 import           Control.DeepSeq
 import           Control.Lens
@@ -22,6 +22,8 @@ import qualified Test.QuickCheck as TQ
 -- never know what people are up to, this is utf8-encoded.
 --
 -- TODO Provide @Iso'@ for @Text@, too?
+--
+-- TODO move into @Biobase.Types.SequenceID@
 
 newtype SequenceID = SequenceID { _sequenceID ∷ ByteString }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show, IsString)
