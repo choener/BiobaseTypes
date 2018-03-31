@@ -23,39 +23,46 @@ import Data.PrimitiveArray.Index.Class
 
 
 
+-- | Encode strand information. 'PlusStrand' is defined as the strand encoded
+-- in, say, the FASTA file. 'MinusStrand' hence is the reverse complement.
+
 newtype Strand = Strand { getStrand :: Int }
   deriving (Eq,Ord,Generic)
 
 instance Show Strand where
-  show P = "+"
-  show M = "-"
+  show PlusStrand  = "+"
+  show MinusStrand = "-"
 
 instance Read Strand where
   readsPrec _ xs = do
-    ([pm],s) <- lex xs
-    guard $ pm `elem` ("+-PMpm" :: String)
-    return (go pm,s)
-    where go x | x `elem` ("+Pp" :: String) = P
-               | x `elem` ("-Mm" :: String) = M
+    (pm,s) <- lex xs
+    case pm of
+      "PlusStrand" → return (PlusStrand, s)
+      "MinusStrand" → return (MinusStrand, s)
+      [x] | x `elem` ("+Pp" ∷ String) → return (PlusStrand,s)
+          | x `elem` ("-Mm" ∷ String) → return (MinusStrand,s)
+      _ → []
 
 instance Bounded Strand where
-  minBound = P
-  maxBound = M
+  minBound = PlusStrand
+  maxBound = MinusStrand
 
 instance Enum Strand where
-  succ P = M
-  succ M = error "succ M"
-  pred M = P
-  pred P = error "pred P"
+  succ PlusStrand = MinusStrand
+  succ MinusStrand = error "succ MinusStrand"
+  pred MinusStrand = PlusStrand
+  pred PlusStrand = error "pred PlusStrand"
   toEnum i | i>=0 && i<=1 = Strand i
   toEnum i                = error $ "toEnum (Strand)" ++ show i
   fromEnum = getStrand
 
-pattern P = Strand 0
-pattern M = Strand 1
+pattern PlusStrand  = Strand 0
+pattern MinusStrand = Strand 1
 
-pattern Sense     = P
-pattern AntiSense = M
+-- TODO Sense and Antisense are somewhat different
+
+--pattern Sense     = P
+--pattern AntiSense = M
 
 instance Binary    Strand
 instance Serialize Strand
