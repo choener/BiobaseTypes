@@ -30,8 +30,8 @@ newtype Strand = Strand { getStrand :: Int }
   deriving (Eq,Ord,Generic)
 
 instance Show Strand where
-  show PlusStrand  = "+"
-  show MinusStrand = "-"
+  show PlusStrand  = "PlusStrand"
+  show MinusStrand = "MinusStrand"
 
 instance Read Strand where
   readsPrec _ xs = do
