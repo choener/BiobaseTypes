@@ -7,6 +7,8 @@
 -- use it, import @Biobase.Types.Index.Type@ directly. Use @fromInt0@ to
 -- make clear that you count from 0 and transform to an @Index t@. I.e.
 -- @fromInt0 0 :: Index 1@ yields the lowest 1-base index.
+--
+-- Note that internally, every lowest index starts at @0 :: Int@.
 
 module Biobase.Types.Index
   ( module Biobase.Types.Index

@@ -71,6 +71,7 @@ library
     Biobase.Types.Names
     Biobase.Types.Names.Internal
     Biobase.Types.NucleotideSequence
+    Biobase.Types.ReadingFrame
     Biobase.Types.Shape
     Biobase.Types.Strand
     Biobase.Types.Structure
