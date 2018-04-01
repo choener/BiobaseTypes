@@ -22,7 +22,8 @@ import Data.Proxy
 import GHC.TypeLits
 import Text.Printf
 
-import Biobase.Types.Index.Type
+import Biobase.Types.Index.Type -- hiding (getIndex)
+import qualified Biobase.Types.Index.Type as IT
 
 
 
@@ -55,7 +56,7 @@ reIndex (Index i) = Index $ i - n + m
 -- | Unsafe plus.
 
 unsafePlus :: forall t . KnownNat t => Index t -> Int -> Index t
-unsafePlus i n = Index $ getIndex i + n
+unsafePlus i n = Index $ IT.getIndex i + n
 {-# Inline unsafePlus #-}
 
 -- | Helper function that allows @subtraction@ of an 'Index' and an 'Int',
@@ -68,19 +69,23 @@ unsafePlus i n = Index $ getIndex i + n
 -- | Delta between two 'Index' points.
 
 delta :: forall t . KnownNat t => Index t -> Index t -> Int
-delta i j = abs . getIndex $ i - j
+delta i j = abs . IT.getIndex $ i - j
 {-# Inline delta #-}
 
 -- | Unsafe minus.
 
 unsafeMinus :: forall t . KnownNat t => Index t -> Int -> Index t
-unsafeMinus i n = Index $ getIndex i - n
+unsafeMinus i n = Index $ IT.getIndex i - n
 {-# Inline unsafeMinus #-}
+
+toInt ∷ forall t . KnownNat t ⇒ Index t → Int
+{-# Inline toInt #-}
+toInt i = IT.getIndex i + (fromIntegral $ natVal (Proxy ∷ Proxy t))
 
 -- | Return the index as an @Int@-style index that is zero-based.
 
 toInt0 :: forall t . KnownNat t => Index t -> Int
-toInt0 = getIndex
+toInt0 = IT.getIndex
 {-# Inline toInt0 #-}
 
 -- | As an index from an @Int@-style zero-based one.
