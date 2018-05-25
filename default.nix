@@ -1,19 +1,27 @@
-with import <nixpkgs> {};
-let
-  packageOverrides = haskellPackages.override {
-    overrides = self: super: {
-      # old doctest
-      pipes-group = haskell.lib.dontCheck super.pipes-group;
-    };
-  };
-  sourceOverrides = packageOverrides.extend (haskell.lib.packageSourceOverrides {
-    BiobaseTypes = ../Lib-BiobaseTypes;
+with (import <nixpkgs> {});
+with haskell.lib;
+
+rec {
+  hsPkgs = haskellPackages.extend (packageSourceOverrides {
+    bimaps = ../Lib-bimaps;
+    BiobaseTypes = ./.;
     DPutils = ../Lib-DPutils;
     ForestStructures = ../Lib-ForestStructures;
     OrderedBits = ../Lib-OrderedBits;
     PrimitiveArray = ../Lib-PrimitiveArray;
     SciBaseTypes = ../Lib-SciBaseTypes;
   });
-in
-sourceOverrides
-
+  hsShell = with hsPkgs; shellFor {
+    packages = p: [ p.BiobaseTypes ];
+    withHoogle = true;
+    buildInputs = [
+      cabal-install ghc
+      bimaps
+      DPutils
+      ForestStructures
+      OrderedBits
+      PrimitiveArray
+      SciBaseTypes
+    ];
+  };
+}
