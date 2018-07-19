@@ -17,6 +17,7 @@ import Data.Serialize (Serialize)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
 
+import Numeric.Discretized
 import Numeric.Limits
 
 
@@ -53,26 +54,24 @@ instance Default DG where
 
 
 
--- | @round $ DG / 100@.
+-- | Discretized @DG@.
 
-newtype DeltaDekaGibbs = DekaG { getDekaG :: Int }
+newtype DDG = DDG { dDG ∷ Discretized 1 100 }
   deriving (Eq,Ord,Num,Read,Show,Generic,Integral,Real,Enum)
 
+derivingUnbox "DDG"
+  [t| DDG → Int |]  [| getDiscretized . dDG |]  [| DDG . Discretized |]
 
-
-derivingUnbox "DeltaDekaGibbs"
-  [t| DeltaDekaGibbs -> Int |]  [| getDekaG |]  [| DekaG |]
-
-instance Hashable  DeltaDekaGibbs
-instance Binary    DeltaDekaGibbs
-instance Serialize DeltaDekaGibbs
-instance FromJSON  DeltaDekaGibbs
-instance ToJSON    DeltaDekaGibbs
-instance NFData    DeltaDekaGibbs
-
-deriving instance NumericLimits DeltaDekaGibbs
-
-instance Default DeltaDekaGibbs where
-  def = maxFinite `div` 100
-  {-# Inline def #-}
-
+--instance Hashable  DeltaDekaGibbs
+--instance Binary    DeltaDekaGibbs
+--instance Serialize DeltaDekaGibbs
+--instance FromJSON  DeltaDekaGibbs
+--instance ToJSON    DeltaDekaGibbs
+--instance NFData    DeltaDekaGibbs
+--
+--deriving instance NumericLimits DeltaDekaGibbs
+--
+--instance Default DeltaDekaGibbs where
+--  def = maxFinite `div` 100
+--  {-# Inline def #-}
+--

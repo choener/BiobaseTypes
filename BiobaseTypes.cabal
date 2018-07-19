@@ -90,9 +90,11 @@ library
                     , MultiParamTypeClasses
                     , OverloadedStrings
                     , PatternSynonyms
+                    , PolyKinds
                     , ScopedTypeVariables
                     , StandaloneDeriving
                     , TemplateHaskell
+                    , TypeApplications
                     , TypeFamilies
                     , TypeOperators
                     , TupleSections
