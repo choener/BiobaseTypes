@@ -39,7 +39,7 @@ import           Data.Forest.StructuredPaired
 -- ones. It is assumed that the @()@ match up. These structures from a Monoid.
 
 newtype RNAss = RNAss { _rnass ∷ ByteString }
-  deriving (Eq,Ord,Show,Read,Data,Typeable,Generic,Monoid)
+  deriving (Eq,Ord,Show,Read,Data,Typeable,Generic,Semigroup,Monoid)
 makeLenses ''RNAss
 
 instance NFData RNAss
