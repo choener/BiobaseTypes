@@ -1,3 +1,9 @@
+0.1.4.0
+-------
+
+- changes to indexing and others
+- some changes that probably require a bump
+
 0.1.3.0
 -------
 
