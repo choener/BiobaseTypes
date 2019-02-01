@@ -13,6 +13,7 @@ import Data.Binary (Binary)
 import Data.Data
 import Data.Default
 import Data.Hashable
+import GHC.Real
 import Data.Serialize (Serialize)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
@@ -56,8 +57,8 @@ instance Default DG where
 
 -- | Discretized @DG@.
 
-newtype DDG = DDG { dDG ∷ Discretized 1 100 }
-  deriving (Eq,Ord,Num,Read,Show,Generic,Integral,Real,Enum)
+newtype DDG = DDG { dDG ∷ Discretized (1 :% 100) }
+  deriving (Eq,Ord,Num,Read,Show,Generic,Real,Enum)
 
 derivingUnbox "DDG"
   [t| DDG → Int |]  [| getDiscretized . dDG |]  [| DDG . Discretized |]
