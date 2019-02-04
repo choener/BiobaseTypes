@@ -26,6 +26,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 
+import           Algebra.Structure.Semiring
 import           Numeric.Limits
 
 
@@ -40,6 +41,16 @@ import           Numeric.Limits
 
 newtype Bitscore = Bitscore { getBitscore :: Double }
   deriving (Eq,Ord,Read,Show,Num,Fractional,Generic)
+
+instance Semiring Bitscore where
+  plus = (+)
+  times = (*)
+  zero = 0
+  one = 1
+  {-# Inline plus  #-}
+  {-# Inline times #-}
+  {-# Inline zero  #-}
+  {-# Inline one   #-}
 
 instance Binary    Bitscore
 instance FromJSON  Bitscore
