@@ -1,3 +1,8 @@
+0.2.0.0
+-------
+
+- unified treatment of bio sequences with one phantom-typed newtype.
+
 0.1.4.0
 -------
 
