@@ -1,120 +1,122 @@
 
--- | Wrappers around biosequences.
+-- | Abstraction over bio sequences encoded as one-ascii character as one
+-- symbol. We phantom-type the exact bio-sequence type and provide type classes
+-- that act on known types.
+--
+-- Unknown bio sequences should be tagged with @Void@.
 
-module Biobase.Types.NucleotideSequence where
+module Biobase.Types.BioSequence where
 
 import           Control.DeepSeq
 import           Control.Lens
-import           Data.ByteString (ByteString)
+import           Data.ByteString.Char8 (ByteString)
 import           Data.Char (ord,chr,toUpper)
 import           Data.Data (Data)
 import           Data.Typeable (Typeable)
+import           Data.Void
 import           GHC.Exts (IsString(..))
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.UTF8 as BSU
-import           Test.QuickCheck (Arbitrary(..))
 import qualified Test.QuickCheck as TQ
+import           Test.QuickCheck (Arbitrary(..))
 
 
 
--- | A sequence identifier. Just a newtype wrapped text field. Because we can
--- never know what people are up to, this is utf8-encoded.
---
--- TODO Provide @Iso'@ for @Text@, too?
---
--- TODO move into @Biobase.Types.SequenceID@
+data RNA
 
-newtype SequenceID = SequenceID { _sequenceID ∷ ByteString }
-  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show, IsString)
-makeLenses ''SequenceID
+data DNA
 
-instance NFData SequenceID
-
--- | Convert to a string in a unicode-aware manner.
-
-sequenceIDstring ∷ Iso' SequenceID String
-sequenceIDstring = sequenceID . iso BSU.toString BSU.fromString
-{-# Inline sequenceIDstring #-}
+data AA
 
 
 
--- | A short RNA sequence.
---
--- It is an instance of 'Ixed' to allow @RNAseq (BS.pack "cag") ^? ix 2 == Just 'g'@.
-
-newtype RNAseq = RNAseq { _rnaseq ∷ ByteString }
+newtype BioSequence (which ∷ k) = BioSequence {_bioSequence ∷ ByteString}
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
-makeLenses ''RNAseq
+makeWrapped ''BioSequence
+makePrisms ''BioSequence
 
-instance NFData RNAseq
+instance NFData (BioSequence w)
 
-type instance Index RNAseq = Int
+type instance Index (BioSequence w) = Int
 
-type instance IxValue RNAseq = Char
+type instance IxValue (BioSequence w) = Char
 
-instance Ixed RNAseq where
-  ix k = rnaseq . ix k . iso (chr . fromIntegral) (fromIntegral . ord)
+instance Ixed (BioSequence w) where
+  ix k = _BioSequence . ix k . iso (chr . fromIntegral) (fromIntegral . ord)
   {-# Inline ix #-}
 
-deriving instance Reversing RNAseq
+deriving instance Reversing (BioSequence w)
 
-mkRNAseq ∷ ByteString → RNAseq
-mkRNAseq = RNAseq . BS.map go . BS.map toUpper
+instance IsString (BioSequence Void) where
+  fromString = BioSequence . BS.pack
+
+
+
+-- * RNA
+
+mkRNAseq ∷ ByteString → BioSequence RNA
+mkRNAseq = BioSequence . BS.map go . BS.map toUpper
   where go x | x `elem` acgu = x
              | otherwise     = 'N'
         acgu ∷ String
         acgu = "ACGU"
 
-instance IsString RNAseq where
+instance IsString (BioSequence RNA) where
   fromString = mkRNAseq . BS.pack
 
-instance Arbitrary RNAseq where
+instance Arbitrary (BioSequence RNA) where
   arbitrary = do
     k ← TQ.choose (0,100)
     xs ← TQ.vectorOf k $ TQ.elements "ACGU"
-    return . RNAseq $ BS.pack xs
+    return . BioSequence $ BS.pack xs
   shrink = view (to shrink)
 
 
 
--- | A short DNA sequence.
---
--- Note everything really long should be handled by specialized libraries with
--- streaming capabilities.
+-- * DNA
 
-newtype DNAseq = DNAseq { _dnaseq ∷ ByteString }
-  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
-makeLenses ''DNAseq
-
-instance NFData DNAseq
-
-type instance Index DNAseq = Int
-
-type instance IxValue DNAseq = Char
-
-instance Ixed DNAseq where
-  ix k = dnaseq . ix k . iso (chr . fromIntegral) (fromIntegral . ord)
-  {-# Inline ix #-}
-
-mkDNAseq ∷ ByteString → DNAseq
-mkDNAseq = DNAseq . BS.map go . BS.map toUpper
+mkDNAseq ∷ ByteString → (BioSequence DNA)
+mkDNAseq = BioSequence . BS.map go . BS.map toUpper
   where go x | x `elem` acgt = x
              | otherwise     = 'N'
         acgt ∷ String
         acgt = "ACGT"
 
-instance IsString DNAseq where
+instance IsString (BioSequence DNA) where
   fromString = mkDNAseq . BS.pack
 
-deriving instance Reversing DNAseq
-
-instance Arbitrary DNAseq where
+instance Arbitrary (BioSequence DNA) where
   arbitrary = do
     k ← TQ.choose (0,100)
     xs ← TQ.vectorOf k $ TQ.elements "ACGT"
-    return . DNAseq $ BS.pack xs
+    return . BioSequence $ BS.pack xs
   shrink = view (to shrink)
+
+
+
+-- * Amino acid sequences
+
+mkAAseq ∷ ByteString → (BioSequence AA)
+mkAAseq = BioSequence . BS.map go . BS.map toUpper
+  where go x | x `elem` aas = x
+             | otherwise    = 'X'
+        aas ∷ String
+        aas = "ARNDCEQGHILKMFPSTWYVUO"
+
+instance IsString (BioSequence AA) where
+  fromString = mkAAseq . BS.pack
+
+instance Arbitrary (BioSequence AA) where
+  arbitrary = do
+    k ← TQ.choose (0,100)
+    xs ← TQ.vectorOf k $ TQ.elements "ARNDCEQGHILKMFPSTWYVUO"
+    return . BioSequence $ BS.pack xs
+  shrink = view (to shrink)
+
+
+
+
+-- * DNA/RNA
 
 -- | Simple case translation from @U@ to @T@. with upper and lower-case
 -- awareness.
@@ -187,16 +189,16 @@ class Transcribe f where
 -- | Transcribe a DNA sequence into an RNA sequence. This does not @reverse@
 -- the sequence!
 
-instance Transcribe DNAseq where
-  type TranscribeTo DNAseq = RNAseq
-  transcribe = iso (RNAseq . BS.map dna2rna . _dnaseq) (DNAseq . BS.map rna2dna . _rnaseq)
+instance Transcribe (BioSequence DNA) where
+  type TranscribeTo (BioSequence DNA) = (BioSequence RNA)
+  transcribe = iso (over _BioSequence (BS.map dna2rna)) (over _BioSequence (BS.map rna2dna))
   {-# Inline transcribe #-}
 
 -- | Transcribe a RNA sequence into an DNA sequence. This does not @reverse@
 -- the sequence!
 
-instance Transcribe RNAseq where
-  type TranscribeTo RNAseq = DNAseq
+instance Transcribe (BioSequence RNA) where
+  type TranscribeTo (BioSequence RNA) = (BioSequence DNA)
   transcribe = from transcribe
   {-# Inline transcribe #-}
 
@@ -207,11 +209,11 @@ instance Transcribe RNAseq where
 class Complement f where
   complement ∷ Iso' f f
 
-instance Complement DNAseq where
-  complement = iso (DNAseq . BS.map dnaComplement . _dnaseq) (DNAseq . BS.map dnaComplement . _dnaseq)
+instance Complement (BioSequence DNA) where
+  complement = iso (over _BioSequence (BS.map dnaComplement)) (over _BioSequence (BS.map dnaComplement))
   {-# Inline complement #-}
 
-instance Complement RNAseq where
-  complement = iso (RNAseq . BS.map rnaComplement . _rnaseq) (RNAseq . BS.map rnaComplement . _rnaseq)
+instance Complement (BioSequence RNA) where
+  complement = iso (over _BioSequence (BS.map rnaComplement)) (over _BioSequence (BS.map rnaComplement))
   {-# Inline complement #-}
 

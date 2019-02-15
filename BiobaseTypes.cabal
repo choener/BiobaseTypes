@@ -62,7 +62,7 @@ library
                , SciBaseTypes             == 0.0.0.*
   exposed-modules:
     Biobase.Types.Accession
-    Biobase.Types.AminoAcidSequence
+    Biobase.Types.BioSequence
     Biobase.Types.Bitscore
     Biobase.Types.Energy
     Biobase.Types.Evalue
@@ -70,7 +70,6 @@ library
     Biobase.Types.Index.Type
     Biobase.Types.Names
     Biobase.Types.Names.Internal
-    Biobase.Types.NucleotideSequence
     Biobase.Types.ReadingFrame
     Biobase.Types.Shape
     Biobase.Types.Strand
