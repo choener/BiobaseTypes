@@ -8,11 +8,14 @@
 module Biobase.Types.Strand where
 
 import Control.DeepSeq
+import Control.Lens hiding (Index)
 import Control.Monad (guard)
 import Data.Aeson
 import Data.Binary
+import Data.Data (Data)
 import Data.Hashable (Hashable)
 import Data.Serialize (Serialize)
+import Data.Typeable (Typeable)
 import Data.Vector.Fusion.Stream.Monadic (Step(..), flatten)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
@@ -27,7 +30,7 @@ import Data.PrimitiveArray.Index.Class
 -- in, say, the FASTA file. 'MinusStrand' hence is the reverse complement.
 
 newtype Strand = Strand { getStrand :: Int }
-  deriving (Eq,Ord,Generic)
+  deriving (Eq,Ord,Generic,Data,Typeable)
 
 instance Show Strand where
   show PlusStrand  = "PlusStrand"
@@ -55,6 +58,10 @@ instance Enum Strand where
   toEnum i | i>=0 && i<=1 = Strand i
   toEnum i                = error $ "toEnum (Strand)" ++ show i
   fromEnum = getStrand
+
+instance Reversing Strand where
+  reversing PlusStrand = MinusStrand
+  reversing MinusStrand = PlusStrand
 
 pattern PlusStrand  = Strand 0
 pattern MinusStrand = Strand 1

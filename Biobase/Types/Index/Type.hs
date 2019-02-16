@@ -5,15 +5,17 @@ import           Control.Applicative ((<$>))
 import           Control.DeepSeq
 import           Data.Aeson
 import           Data.Binary
+import           Data.Data (Data)
 import           Data.Hashable (Hashable)
 import           Data.Proxy
 import           Data.Serialize (Serialize)
+import           Data.Typeable (Typeable)
 import           Data.Vector.Fusion.Stream.Monadic (Step(..), flatten)
-import qualified Data.Vector.Fusion.Stream.Monadic as SM
 import           Data.Vector.Unboxed.Deriving
 import           GHC.Generics
 import           GHC.TypeLits
 import qualified Data.Ix as Ix
+import qualified Data.Vector.Fusion.Stream.Monadic as SM
 import           Test.QuickCheck
 import           Text.Printf
 
@@ -25,7 +27,7 @@ import qualified Data.PrimitiveArray.Index.Class as PA
 -- | A linear @Int@-based index type.
 
 newtype Index (t :: Nat) = Index { getIndex :: Int }
-  deriving (Show,Read,Eq,Ord,Generic,Ix.Ix)
+  deriving (Show,Read,Eq,Ord,Generic,Ix.Ix,Data,Typeable)
 
 -- | Turn an 'Int' into an 'Index' safely.
 

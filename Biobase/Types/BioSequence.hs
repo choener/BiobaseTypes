@@ -19,19 +19,41 @@ import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS
 import qualified Test.QuickCheck as TQ
 import           Test.QuickCheck (Arbitrary(..))
+import qualified Data.ByteString.UTF8 as BSU
+
+import           Biobase.Types.Strand
+import qualified Biobase.Types.Index as BTI
 
 
+
+-- * Sequence identifiers
+
+newtype SequenceIdentifier (which ∷ k) = SequenceIdentifier { _sequenceIdentifier ∷ ByteString }
+  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
+makeWrapped ''SequenceIdentifier
+makePrisms ''SequenceIdentifier
+
+instance NFData (SequenceIdentifier w)
+
+instance IsString (SequenceIdentifier w) where
+  fromString = SequenceIdentifier . BSU.fromString
+
+
+
+-- * Bio-Sequences
 
 data RNA
 
 data DNA
+
+data XNA
 
 data AA
 
 
 
 newtype BioSequence (which ∷ k) = BioSequence {_bioSequence ∷ ByteString}
-  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
+  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show, Semigroup)
 makeWrapped ''BioSequence
 makePrisms ''BioSequence
 
@@ -94,6 +116,27 @@ instance Arbitrary (BioSequence DNA) where
 
 
 
+-- * XNA
+
+mkXNAseq ∷ ByteString → (BioSequence XNA)
+mkXNAseq = BioSequence . BS.map go . BS.map toUpper
+  where go x | x `elem` acgtu = x
+             | otherwise      = 'N'
+        acgtu ∷ String
+        acgtu = "ACGTU"
+
+instance IsString (BioSequence XNA) where
+  fromString = mkXNAseq . BS.pack
+
+instance Arbitrary (BioSequence XNA) where
+  arbitrary = do
+    k ← TQ.choose (0,100)
+    xs ← TQ.vectorOf k $ TQ.elements "ACGTU"
+    return . BioSequence $ BS.pack xs
+  shrink = view (to shrink)
+
+
+
 -- * Amino acid sequences
 
 mkAAseq ∷ ByteString → (BioSequence AA)
@@ -113,6 +156,55 @@ instance Arbitrary (BioSequence AA) where
     return . BioSequence $ BS.pack xs
   shrink = view (to shrink)
 
+
+
+-- * A window into a longer sequence with prefix/suffix information.
+
+-- | Phantom-typed over two types, the type @w@ of the identifier, which can be
+-- descriptive ("FirstInput") and the second type, identifying what kind of
+-- sequence types we are dealing with. Finally, the third type fixes the index
+-- type of the infix.
+
+data BioSequenceWindow w ty k = BioSequenceWindow
+  { _bswIdentifier ∷ !(SequenceIdentifier w)
+    -- ^ Identifier for this window. Typically some fasta identifier
+  , _bswPrefix     ∷ !(BioSequence ty)
+    -- ^ Any prefix for this sequence
+  , _bswSequence   ∷ !(BioSequence ty)
+    -- ^ The actual sequence, the infix
+  , _bswSuffix     ∷ !(BioSequence ty)
+    -- ^ any suffix
+  , _bswStrand     ∷ !Strand
+    -- ^ strand information. Probably '+' but arbitrary
+  , _bswIndex ∷ !(BTI.Index k)
+    -- ^ Provide the index for the left-most character of the @bswSequence@ on
+    -- '+' on '-' as well, but to be interpreted on the '+' strand.
+    -- TODO this actually needs a more complicated encoding...!
+  }
+  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
+makeLenses ''BioSequenceWindow
+
+instance Reversing (BioSequenceWindow w ty k) where
+  {-# Inlinable reversing #-}
+  reversing bsw = bsw
+                & bswPrefix .~ (bsw^.bswSuffix.reversed)
+                & bswSuffix .~ (bsw^.bswPrefix.reversed)
+                & bswSequence .~ (bsw^.bswSequence.reversed)
+                & bswStrand .~ (bsw^.bswStrand.reversed)
+
+-- | A lens into the full sequence information of a sequence window. One should
+-- *NOT* modify the length of the individual sequences.
+
+bswFullSequence ∷ Lens' (BioSequenceWindow w ty k) (BioSequence ty)
+{-# Inlinable bswFullSequence #-}
+bswFullSequence = lens f t
+  where f bsw = bsw^.bswPrefix <> bsw^.bswSequence <> bsw^.bswSuffix
+        t bsw (BioSequence s) =
+          let (pfx,ifxsfx) = BS.splitAt (bsw^.bswPrefix._BioSequence.to BS.length) s
+              (ifx,sfx) = BS.splitAt (bsw^.bswSequence._BioSequence.to BS.length) ifxsfx
+          in  bsw & bswPrefix._BioSequence .~ pfx
+                  & bswSequence._BioSequence .~ ifx
+                  & bswSuffix._BioSequence .~ sfx
 
 
 
