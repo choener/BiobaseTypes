@@ -46,9 +46,9 @@ maybeIndex i
 {-# Inline maybeIndex #-}
 
 instance KnownNat t => Num (Index t) where
-  Index a + Index b = error "not implemented, use (+.)" -- index $ a + b
-  Index a - Index b = error "not implemented, use (-.)" -- index $ a - b
-  Index a * Index b = error "not implemented" -- index $ a * b
+  Index a + Index b = error $ show (" Index.(+) not implemented, use (+.)",a,b) -- index $ a + b
+  Index a - Index b = error $ show (" Index.(-) not implemented, use (-.)",a,b) -- index $ a - b
+  Index a * Index b = error $ show (" Index.(*) not implemented", a,b) -- index $ a * b
   negate = error "Indices are natural numbers"
   abs = id
   signum = index . signum . getIndex
