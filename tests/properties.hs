@@ -10,8 +10,8 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck (testProperty)
 import           Test.Tasty.TH
 
+import           Biobase.Types.BioSequence
 import           Biobase.Types.Bitscore
-import           Biobase.Types.NucleotideSequence
 import           Biobase.Types.Shape
 import           Biobase.Types.Structure
 
@@ -29,11 +29,11 @@ prop_ProbScore (Positive null) (Positive x) = x ~= score2Prob null (prob2Score n
 
 -- complement twice
 
-prop_complement_twice_DNA (dna ∷ DNAseq) = dna == dna^.complement.complement
+prop_complement_twice_DNA (dna ∷ BioSequence DNA) = dna == dna^.complement.complement
 
-prop_complement_twice_RNA (rna ∷ RNAseq) = rna == rna^.complement.complement
+prop_complement_twice_RNA (rna ∷ BioSequence RNA) = rna == rna^.complement.complement
 
-prop_transcribe_twice_DNA (dna ∷ DNAseq) = dna == dna^.transcribe.transcribe
+prop_transcribe_twice_DNA (dna ∷ BioSequence DNA) = dna == dna^.transcribe.transcribe
 
 --prop_transcribe_twice_DNA (rna ∷ RNAseq) = rna == rna^.transcribe.transcribe
 
