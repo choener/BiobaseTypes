@@ -53,30 +53,24 @@ reIndex (Index i) = Index $ i - n + m
 (+.) i n = checkIndex $ unsafePlus i n
 {-# Inline (+.) #-}
 
+-- | Helper function that allows @subtraction@ of an 'Index' and an 'Int',
+-- with the 'Int' on the right.
+
+(-.) :: forall t . KnownNat t => Index t -> Int -> Index t
+(-.) i n = checkIndex $ unsafePlus i n
+{-# Inline (-.) #-}
+
 -- | Unsafe plus.
 
 unsafePlus :: forall t . KnownNat t => Index t -> Int -> Index t
 unsafePlus i n = Index $ IT.getIndex i + n
 {-# Inline unsafePlus #-}
 
--- | Helper function that allows @subtraction@ of an 'Index' and an 'Int',
--- with the 'Int' on the right.
-
-(-.) :: forall t . KnownNat t => Index t -> Int -> Index t
-(-.) i n = checkIndex $ unsafeMinus i n
-{-# Inline (-.) #-}
-
 -- | Delta between two 'Index' points.
 
 delta :: forall t . KnownNat t => Index t -> Index t -> Int
 delta i j = abs . IT.getIndex $ i - j
 {-# Inline delta #-}
-
--- | Unsafe minus.
-
-unsafeMinus :: forall t . KnownNat t => Index t -> Int -> Index t
-unsafeMinus i n = Index $ IT.getIndex i - n
-{-# Inline unsafeMinus #-}
 
 toInt ∷ forall t . KnownNat t ⇒ Index t → Int
 {-# Inline toInt #-}

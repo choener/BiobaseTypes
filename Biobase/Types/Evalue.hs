@@ -8,6 +8,7 @@
 module Biobase.Types.Evalue where
 
 import           Control.DeepSeq
+import           Control.Lens
 import           Data.Aeson
 import           Data.Binary
 import           Data.Default
@@ -29,6 +30,7 @@ import           Numeric.Limits
 
 newtype Evalue = Evalue { getEvalue :: Double }
   deriving (Eq,Ord,Read,Show,Num,Generic)
+makeWrapped ''Evalue
 
 instance Binary    Evalue
 instance FromJSON  Evalue

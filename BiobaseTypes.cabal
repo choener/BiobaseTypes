@@ -58,12 +58,13 @@ library
                --
                , bimaps                   == 0.1.0.*
                , ForestStructures         == 0.0.1.*
-               , PrimitiveArray           == 0.9.0.*
-               , SciBaseTypes             == 0.0.0.*
+               , PrimitiveArray           == 0.9.1.*
+               , SciBaseTypes             == 0.1.0.*
   exposed-modules:
     Biobase.Types.Accession
     Biobase.Types.BioSequence
     Biobase.Types.Bitscore
+    Biobase.Types.Codon
     Biobase.Types.Energy
     Biobase.Types.Evalue
     Biobase.Types.Index
@@ -75,12 +76,16 @@ library
     Biobase.Types.Strand
     Biobase.Types.Structure
     Biobase.Types.Taxonomy
+    DP.Backtraced.BioSequence
+    DP.Backtraced.Codon
   default-language:
     Haskell2010
   default-extensions: BangPatterns
                     , DataKinds
                     , DeriveDataTypeable
+                    , DeriveFoldable
                     , DeriveGeneric
+                    , DeriveTraversable
                     , FlexibleContexts
                     , FlexibleInstances
                     , GeneralizedNewtypeDeriving
