@@ -4,6 +4,8 @@
 -- that act on known types.
 --
 -- Unknown bio sequences should be tagged with @Void@.
+--
+-- TODO give (lens) usage examples
 
 module Biobase.Types.BioSequence where
 
@@ -75,6 +77,10 @@ instance IsString (BioSequence Void) where
 
 
 -- * RNA
+
+-- |
+--
+-- TODO write that converts explicitly
 
 mkRNAseq ∷ ByteString → BioSequence RNA
 mkRNAseq = BioSequence . BS.map go . BS.map toUpper

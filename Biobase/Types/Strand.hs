@@ -1,9 +1,11 @@
 
 -- | Strand information. A newtyped version, complete with serialization,
--- pattern synonyms, being a @PrimitiveArray@ index type, etc.
+-- pattern synonyms, being a @PrimitiveArray@ index type, etc. The strand
+-- information includes @+@, @-@, as well as the (GFF3) @.@ not stranded, and
+-- @?@ for unknown strand information.
 --
--- TODO will be expanded to encode biological sense information more
--- clearly: <http://en.wikipedia.org/wiki/Sense_%28molecular_biology%29>.
+-- TODO will be expanded to encode biological sense information more clearly:
+-- <http://en.wikipedia.org/wiki/Sense_%28molecular_biology%29>.
 
 module Biobase.Types.Strand where
 
@@ -33,8 +35,10 @@ newtype Strand = Strand { getStrand :: Int }
   deriving (Eq,Ord,Generic,Data,Typeable)
 
 instance Show Strand where
-  show PlusStrand  = "PlusStrand"
-  show MinusStrand = "MinusStrand"
+  show PlusStrand    = "PlusStrand"
+  show MinusStrand   = "MinusStrand"
+  show NotStranded   = "NotStranded"
+  show UnknownStrand = "UnknownStrand"
 
 instance Read Strand where
   readsPrec _ xs = do
@@ -42,29 +46,42 @@ instance Read Strand where
     case pm of
       "PlusStrand" → return (PlusStrand, s)
       "MinusStrand" → return (MinusStrand, s)
+      "NotStranded" → return (NotStranded, s)
+      "UnknownStrand" → return (UnknownStrand, s)
       [x] | x `elem` ("+Pp" ∷ String) → return (PlusStrand,s)
           | x `elem` ("-Mm" ∷ String) → return (MinusStrand,s)
+          | x `elem` ("."   ∷ String) → return (NotStranded,s)
+          | x `elem` ("?"   ∷ String) → return (UnknownStrand,s)
       _ → []
 
 instance Bounded Strand where
   minBound = PlusStrand
-  maxBound = MinusStrand
+  maxBound = UnknownStrand
 
 instance Enum Strand where
-  succ PlusStrand = MinusStrand
-  succ MinusStrand = error "succ MinusStrand"
-  pred MinusStrand = PlusStrand
-  pred PlusStrand = error "pred PlusStrand"
-  toEnum i | i>=0 && i<=1 = Strand i
+  succ (Strand k)
+    | k <  0 = error "succ undefined strand"
+    | k == 3 = error "succ UnknownStrand"
+    | k >  3 = error "succ undefined strand"
+    | otherwise = Strand (k+1)
+  pred (Strand k)
+    | k <  0 = error "pred undefined strand"
+    | k == 0 = error "pred UnknownStrand"
+    | k >  3 = error "pred undefined strand"
+    | otherwise = Strand (k-1)
+  toEnum i | i>=0 && i<=3 = Strand i
   toEnum i                = error $ "toEnum (Strand)" ++ show i
   fromEnum = getStrand
 
 instance Reversing Strand where
-  reversing PlusStrand = MinusStrand
+  reversing PlusStrand  = MinusStrand
   reversing MinusStrand = PlusStrand
+  reversing x           = x
 
-pattern PlusStrand  = Strand 0
-pattern MinusStrand = Strand 1
+pattern PlusStrand    = Strand 0
+pattern MinusStrand   = Strand 1
+pattern NotStranded   = Strand 2
+pattern UnknownStrand = Strand 3
 
 -- TODO Sense and Antisense are somewhat different
 
@@ -118,7 +135,7 @@ instance IndexStream Strand
 
 instance Arbitrary Strand where
   arbitrary = do
-    b <- choose (0,1)
+    b <- choose (0,3)
     return $ Strand b
   shrink (Strand j)
     | 0<j = [Strand $ j-1]
