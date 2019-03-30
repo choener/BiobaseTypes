@@ -18,6 +18,7 @@ module Biobase.Types.Index
   , Index
   ) where
 
+import Data.Coerce
 import Data.Proxy
 import GHC.TypeLits
 import Text.Printf
@@ -40,11 +41,13 @@ checkIndex i@(Index z)
 -- as @0 :: Index 0@ gives @1 :: Index 1@ for example. I.e. valid indices
 -- become valid indices.
 
-reIndex :: forall n m . (KnownNat n, KnownNat m) => Index n -> Index m
-reIndex (Index i) = Index $ i - n + m
-  where n = fromIntegral $ natVal (Proxy :: Proxy n)
-        m = fromIntegral $ natVal (Proxy :: Proxy m)
+reIndex ∷ Index n → Index m
 {-# Inline reIndex #-}
+reIndex = coerce
+--reIndex :: forall n m . (KnownNat n, KnownNat m) => Index n -> Index m
+--reIndex (Index i) = Index $ i - n + m
+--  where n = fromIntegral $ natVal (Proxy :: Proxy n)
+--        m = fromIntegral $ natVal (Proxy :: Proxy m)
 
 -- | Helper function that allows @addition@ of an 'Index' and an 'Int',
 -- with the 'Int' on the right.
@@ -57,7 +60,7 @@ reIndex (Index i) = Index $ i - n + m
 -- with the 'Int' on the right.
 
 (-.) :: forall t . KnownNat t => Index t -> Int -> Index t
-(-.) i n = checkIndex $ unsafePlus i n
+(-.) i n = checkIndex $ unsafePlus i (negate n)
 {-# Inline (-.) #-}
 
 -- | Unsafe plus.
