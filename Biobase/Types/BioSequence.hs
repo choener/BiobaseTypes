@@ -19,9 +19,10 @@ import           Data.Void
 import           GHC.Exts (IsString(..))
 import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.UTF8 as BSU
+import qualified Streaming.Prelude as SP
 import qualified Test.QuickCheck as TQ
 import           Test.QuickCheck (Arbitrary(..))
-import qualified Data.ByteString.UTF8 as BSU
 
 import           Biobase.Types.Strand
 import qualified Biobase.Types.Index as BTI
@@ -212,6 +213,21 @@ bswFullSequence = lens f t
                   & bswSequence._BioSequence .~ ifx
                   & bswSuffix._BioSequence .~ sfx
 
+-- | For each element, attach the prefix as well.
+--
+-- @1 2 3 4@ -> @01 12 23 34@
+
+attachPrefixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
+{-# Inlinable attachPrefixes #-}
+attachPrefixes xs = SP.zipWith (set bswPrefix) (SP.cons (BioSequence "") $ SP.map (view bswSequence) xs) xs
+
+-- | For each element, attach the suffix as well.
+--
+-- @1 2 3 4@ -> @12 23 34 40@
+
+attachSuffixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m () → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m ()
+{-# Inlinable attachSuffixes #-}
+attachSuffixes xs = SP.zipWith (set bswSuffix) (SP.map (view bswSequence) xs <> SP.yield (BioSequence "")) xs
 
 
 -- * DNA/RNA

@@ -48,6 +48,7 @@ common deps
                , mtl
                , primitive                >= 0.5
                , QuickCheck               >= 2.7
+               , streaming                >= 0.1
                , string-conversions       >= 0.4
                , text                     >= 1.0
                , text-binary              >= 0.2

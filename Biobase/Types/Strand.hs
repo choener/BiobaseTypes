@@ -131,7 +131,7 @@ instance IndexStream z => IndexStream (z:.Strand) where
           {-# Inline [0] step #-}
   {-# Inline streamDown #-}
 
-instance IndexStream Strand
+-- instance IndexStream Strand
 
 instance Arbitrary Strand where
   arbitrary = do
