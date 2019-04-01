@@ -225,9 +225,9 @@ attachPrefixes xs = SP.zipWith (set bswPrefix) (SP.cons (BioSequence "") $ SP.ma
 --
 -- @1 2 3 4@ -> @12 23 34 40@
 
-attachSuffixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m () → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m ()
+attachSuffixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
 {-# Inlinable attachSuffixes #-}
-attachSuffixes xs = SP.zipWith (set bswSuffix) (SP.map (view bswSequence) xs <> SP.yield (BioSequence "")) xs
+attachSuffixes xs = SP.zipWith (set bswSuffix) (SP.map (view bswSequence) xs >>= \r → SP.yield (BioSequence "") >> return r) xs
 
 
 -- * DNA/RNA
