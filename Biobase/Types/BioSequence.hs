@@ -21,9 +21,11 @@ import           GHC.Generics (Generic)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.UTF8 as BSU
 import qualified Streaming.Prelude as SP
+import qualified Streaming as S
 import qualified Test.QuickCheck as TQ
 import           Test.QuickCheck (Arbitrary(..))
 
+import           Biobase.Types.Location
 import           Biobase.Types.Strand
 import qualified Biobase.Types.Index as BTI
 
@@ -169,10 +171,10 @@ instance Arbitrary (BioSequence AA) where
 
 -- | Phantom-typed over two types, the type @w@ of the identifier, which can be
 -- descriptive ("FirstInput") and the second type, identifying what kind of
--- sequence types we are dealing with. Finally, the third type fixes the index
--- type of the infix.
+-- sequence types we are dealing with. Finally, the third type provides
+-- location information and should be location or streamed location.
 
-data BioSequenceWindow w ty k = BioSequenceWindow
+data BioSequenceWindow w ty loc = BioSequenceWindow
   { _bswIdentifier ∷ !(SequenceIdentifier w)
     -- ^ Identifier for this window. Typically some fasta identifier
   , _bswPrefix     ∷ !(BioSequence ty)
@@ -181,23 +183,18 @@ data BioSequenceWindow w ty k = BioSequenceWindow
     -- ^ The actual sequence, the infix
   , _bswSuffix     ∷ !(BioSequence ty)
     -- ^ any suffix
-  , _bswStrand     ∷ !Strand
-    -- ^ strand information. Probably '+' but arbitrary
-  , _bswIndex ∷ !(BTI.Index k)
-    -- ^ Provide the index for the left-most character of the @bswSequence@ on
-    -- '+' on '-' as well, but to be interpreted on the '+' strand.
-    -- TODO this actually needs a more complicated encoding...!
+  , _bswLocation   ∷ !loc
   }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''BioSequenceWindow
 
-instance Reversing (BioSequenceWindow w ty k) where
+instance (Reversing loc) ⇒ Reversing (BioSequenceWindow w ty loc) where
   {-# Inlinable reversing #-}
   reversing bsw = bsw
                 & bswPrefix .~ (bsw^.bswSuffix.reversed)
                 & bswSuffix .~ (bsw^.bswPrefix.reversed)
                 & bswSequence .~ (bsw^.bswSequence.reversed)
-                & bswStrand .~ (bsw^.bswStrand.reversed)
+                & bswLocation .~ (bsw^.bswLocation.reversed)
 
 -- | A lens into the full sequence information of a sequence window. One should
 -- *NOT* modify the length of the individual sequences.
@@ -219,7 +216,10 @@ bswFullSequence = lens f t
 
 attachPrefixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
 {-# Inlinable attachPrefixes #-}
-attachPrefixes xs = SP.zipWith (set bswPrefix) (SP.cons (BioSequence "") $ SP.map (view bswSequence) xs) xs
+attachPrefixes  =
+  let go (Left pfx) w = Right (set bswPrefix pfx w)
+      go (Right p)  w = Right (set bswPrefix (view bswSequence p) w)
+  in  SP.map (\(Right w) → w) . SP.drop 1 . SP.scan go (Left $ BioSequence "") id
 
 -- | For each element, attach the suffix as well.
 --
@@ -227,7 +227,7 @@ attachPrefixes xs = SP.zipWith (set bswPrefix) (SP.cons (BioSequence "") $ SP.ma
 
 attachSuffixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
 {-# Inlinable attachSuffixes #-}
-attachSuffixes xs = SP.zipWith (set bswSuffix) (SP.map (view bswSequence) xs >>= \r → SP.yield (BioSequence "") >> return r) xs
+attachSuffixes xs = undefined
 
 
 -- * DNA/RNA
@@ -324,10 +324,26 @@ class Complement f where
   complement ∷ Iso' f f
 
 instance Complement (BioSequence DNA) where
-  complement = iso (over _BioSequence (BS.map dnaComplement)) (over _BioSequence (BS.map dnaComplement))
   {-# Inline complement #-}
+  complement = let f = (over _BioSequence (BS.map dnaComplement))
+                   {-# Inline f #-}
+               in  iso f f
 
 instance Complement (BioSequence RNA) where
-  complement = iso (over _BioSequence (BS.map rnaComplement)) (over _BioSequence (BS.map rnaComplement))
   {-# Inline complement #-}
+  complement = let f = (over _BioSequence (BS.map rnaComplement))
+                   {-# Inline f #-}
+               in  iso f f
+
+instance (Complement (BioSequence ty)) ⇒ Complement (BioSequenceWindow w ty k) where
+  {-# Inline complement #-}
+  complement = let g = view complement
+                   f = (\w → over bswSuffix g . over bswPrefix g . over bswSequence g $ w)
+                   {-# Inline g #-}
+                   {-# Inline f #-}
+               in  iso f f
+
+reverseComplement ∷ (Complement f, Reversing f) ⇒ Iso' f f
+{-# Inline reverseComplement #-}
+reverseComplement = reversed . complement
 
