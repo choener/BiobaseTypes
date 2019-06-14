@@ -1,3 +1,8 @@
+0.2.0.1
+-------
+
+- minor version bumped due to OrderedBits
+
 0.2.0.0
 -------
 
