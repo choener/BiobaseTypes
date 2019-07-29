@@ -81,6 +81,17 @@ data PartialLocation
 makeLenses ''PartialLocation
 makePrisms ''PartialLocation
 
+-- | Provides a range in a notation as used by blast, for example.
+--
+-- TODO is this ok with the explicit strand encoding?
+
+blastRange1 ∷ Getter PartialLocation (Int, Int, Strand)
+{-# Inline blastRange1 #-}
+blastRange1 = to f where
+  f = \case
+        PartialLocation {..} → let s = toInt . reIndex @0 @1 $ _plStart in (s, s+_plLength, _plStrand)
+        ReversedPartialLocation{..} → let e = toInt . reIndex @0 @1 $ _plEnd in (e, e-_plLength, _plStrand)
+
 -- | Reversing a reversible location means moving the start to the end.
 
 instance Reversing PartialLocation where
