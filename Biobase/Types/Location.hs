@@ -64,50 +64,50 @@ startEndInclusive = iso l2r r2l
 --
 -- 
 
-data PartialLocation
+data FwdLocation
   -- | Location, when it is not yet known how long the contig will be.
-  = PartialLocation
+  = FwdLocation
       { _plStrand ∷ !Strand
       , _plStart  ∷ !(Index 0)
       , _plLength ∷ !Int
       }
   -- | The reversed strand. However, we have an @plEnd@, not a @plStart@ now!
-  | ReversedPartialLocation
+  | RevFwdLocation
       { _plStrand ∷ !Strand
       , _plEnd    ∷ !(Index 0)
       , _plLength ∷ !Int
       }
   deriving (Eq,Ord,Read,Show,Generic)
-makeLenses ''PartialLocation
-makePrisms ''PartialLocation
+makeLenses ''FwdLocation
+makePrisms ''FwdLocation
 
 -- | Provides a range in a notation as used by blast, for example.
 --
 -- TODO is this ok with the explicit strand encoding?
 
-blastRange1 ∷ Getter PartialLocation (Int, Int, Strand)
+blastRange1 ∷ Getter FwdLocation (Int, Int, Strand)
 {-# Inline blastRange1 #-}
 blastRange1 = to f where
   f = \case
-        PartialLocation {..} → let s = toInt . reIndex @0 @1 $ _plStart in (s, s+_plLength, _plStrand)
-        ReversedPartialLocation{..} → let e = toInt . reIndex @0 @1 $ _plEnd in (e, e-_plLength, _plStrand)
+        FwdLocation {..} → let s = toInt . reIndex @0 @1 $ _plStart in (s, s+_plLength, _plStrand)
+        RevFwdLocation{..} → let e = toInt . reIndex @0 @1 $ _plEnd in (e+_plLength,e, _plStrand)
 
 -- | Reversing a reversible location means moving the start to the end.
 
-instance Reversing PartialLocation where
+instance Reversing FwdLocation where
   {-# Inline reversing #-}
   reversing = \case
-    PartialLocation s t l → ReversedPartialLocation (s^.reversed) t l
+    FwdLocation s t l → RevFwdLocation (s^.reversed) t l
 
--- An isomorphism between a 'Location' and the pair @('PartialLocation',Int)@
+-- An isomorphism between a 'Location' and the pair @('FwdLocation',Int)@
 -- exists.
 
-locationPartial ∷ Iso' Location (PartialLocation,Int)
+locationPartial ∷ Iso' Location (FwdLocation,Int)
 {-# Inline locationPartial #-}
 locationPartial = iso l2r r2l where
-  l2r l = (PartialLocation (view lStrand l) (view lStart l) (view lLength l), l^.lTotalLength)
-  r2l (p,z) = case p of PartialLocation s t l → Location s t l z
-                        ReversedPartialLocation s e l
+  l2r l = (FwdLocation (view lStrand l) (view lStart l) (view lLength l), l^.lTotalLength)
+  r2l (p,z) = case p of FwdLocation s t l → Location s t l z
+                        RevFwdLocation s e l
                           | s `elem` [PlusStrand,MinusStrand] → Location s (index $ z- getIndex e -l) l z
                           | otherwise                         → Location s e l z
 
