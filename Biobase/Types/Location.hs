@@ -51,7 +51,11 @@ startEndInclusive = iso l2r r2l
 
 
 -- | During streaming construction, it is possible that we know a feature is on
--- the @-@ strand, but the length of the contig is not known yet.
+-- the @-@ strand, but the length of the contig is not known yet. In that case,
+-- 'FwdLocation' allows expressing the hit in the coordinate system of the plus
+-- strand. Tools like blast do something similar, and express locations on the
+-- minus as @y-x@ with @y>x@. The example below has
+-- @FwdLocation + 2 4@ and @FwdLocation - 8 4@.
 --
 -- @
 -- 0         1         2
@@ -67,37 +71,42 @@ startEndInclusive = iso l2r r2l
 data FwdLocation
   -- | Location, when it is not yet known how long the contig will be.
   = FwdLocation
-      { _plStrand ∷ !Strand
-      , _plStart  ∷ !(Index 0)
-      , _plLength ∷ !Int
-      }
-  -- | The reversed strand. However, we have an @plEnd@, not a @plStart@ now!
-  | RevFwdLocation
-      { _plStrand ∷ !Strand
-      , _plEnd    ∷ !(Index 0)
-      , _plLength ∷ !Int
+      { _fwdStrand ∷ !Strand
+      -- ^ the strand we are on.
+      , _fwdStart  ∷ !(Index 0)
+      -- ^ start of the hit
+      , _fwdLength ∷ !Int
+      -- ^ length of the hit
       }
   deriving (Eq,Ord,Read,Show,Generic)
 makeLenses ''FwdLocation
 makePrisms ''FwdLocation
 
--- | Provides a range in a notation as used by blast, for example.
---
--- TODO is this ok with the explicit strand encoding?
+-- | Provides a range in a notation as used by blast, for example. This
+-- isomorphism can translate back as well. @FwdLocation - 8 4 ^. blastRange1 ==
+-- 9 6 MinusStrand@, since these ranges are 1-based and start and end included.
 
-blastRange1 ∷ Getter FwdLocation (Int, Int, Strand)
+blastRange1 ∷ Iso' FwdLocation (Int, Int, Strand)
 {-# Inline blastRange1 #-}
-blastRange1 = to f where
-  f = \case
-        FwdLocation {..} → let s = toInt . reIndex @0 @1 $ _plStart in (s, s+_plLength, _plStrand)
-        RevFwdLocation{..} → let e = toInt . reIndex @0 @1 $ _plEnd in (e+_plLength,e, _plStrand)
+blastRange1 = iso f t where
+  f FwdLocation{..} =
+      let s = toInt1 _fwdStart
+          l = _fwdLength -1
+      in  case _fwdStrand of
+      PlusStrand  → (s, s+l,_fwdStrand)
+      MinusStrand → (s, s-l,_fwdStrand)
+  t (x,y,str) =
+      let s = fromInt1 x
+          l = abs (x-y) +1
+      in  FwdLocation str s l
 
 -- | Reversing a reversible location means moving the start to the end.
 
 instance Reversing FwdLocation where
   {-# Inline reversing #-}
-  reversing = \case
-    FwdLocation s t l → RevFwdLocation (s^.reversed) t l
+  reversing FwdLocation{..} = case _fwdStrand of
+    PlusStrand  → FwdLocation MinusStrand (index $ _fwdLength-1) _fwdLength
+    MinusStrand → FwdLocation PlusStrand  0                      _fwdLength
 
 -- An isomorphism between a 'Location' and the pair @('FwdLocation',Int)@
 -- exists.
@@ -105,9 +114,6 @@ instance Reversing FwdLocation where
 locationPartial ∷ Iso' Location (FwdLocation,Int)
 {-# Inline locationPartial #-}
 locationPartial = iso l2r r2l where
-  l2r l = (FwdLocation (view lStrand l) (view lStart l) (view lLength l), l^.lTotalLength)
-  r2l (p,z) = case p of FwdLocation s t l → Location s t l z
-                        RevFwdLocation s e l
-                          | s `elem` [PlusStrand,MinusStrand] → Location s (index $ z- getIndex e -l) l z
-                          | otherwise                         → Location s e l z
+  l2r l = undefined
+  r2l (p,z) = undefined
 

@@ -85,6 +85,16 @@ toInt0 :: forall t . KnownNat t => Index t -> Int
 toInt0 = IT.getIndex
 {-# Inline toInt0 #-}
 
+-- | Return the index as an @Int@-style index that is one-based.
+
+toInt1 ∷ forall t . KnownNat t ⇒ Index t → Int
+{-# Inline toInt1 #-}
+toInt1 = (+1) . toInt0
+
+fromInt1 ∷ forall t . KnownNat t ⇒ Int → Index t
+{-# Inline fromInt1 #-}
+fromInt1 = fromInt0 . (subtract 1)
+
 -- | As an index from an @Int@-style zero-based one.
 --
 -- TODO We might want to check that the argument is @[0..]@.
