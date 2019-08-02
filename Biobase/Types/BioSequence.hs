@@ -177,13 +177,15 @@ instance Arbitrary (BioSequence AA) where
 data BioSequenceWindow w ty loc = BioSequenceWindow
   { _bswIdentifier ∷ !(SequenceIdentifier w)
     -- ^ Identifier for this window. Typically some fasta identifier
-  , _bswPrefix     ∷ !(BioSequence ty)
+  , _bswPrefixLen  ∷ !Int
     -- ^ Any prefix for this sequence
   , _bswSequence   ∷ !(BioSequence ty)
-    -- ^ The actual sequence, the infix
-  , _bswSuffix     ∷ !(BioSequence ty)
-    -- ^ any suffix
+    -- ^ The actual sequence, possibly with prefix of suffix attached
+  , _bswSuffixLen  ∷ !Int
+    -- ^ any suffix (length)
   , _bswLocation   ∷ !loc
+    -- ^ full location information. This should include the prefix and suffix,
+    -- if any.
   }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''BioSequenceWindow
@@ -191,43 +193,65 @@ makeLenses ''BioSequenceWindow
 instance (Reversing loc) ⇒ Reversing (BioSequenceWindow w ty loc) where
   {-# Inlinable reversing #-}
   reversing bsw = bsw
-                & bswPrefix .~ (bsw^.bswSuffix.reversed)
-                & bswSuffix .~ (bsw^.bswPrefix.reversed)
+                & bswPrefixLen .~ (bsw^.bswSuffixLen)
+                & bswSuffixLen .~ (bsw^.bswPrefixLen)
                 & bswSequence .~ (bsw^.bswSequence.reversed)
                 & bswLocation .~ (bsw^.bswLocation.reversed)
 
--- | A lens into the full sequence information of a sequence window. One should
--- *NOT* modify the length of the individual sequences.
+-- | Take only @k@ characters from a window, correctly taking into account the
+-- pfx-seq-sfx, and loc information.
 
-bswFullSequence ∷ Lens' (BioSequenceWindow w ty k) (BioSequence ty)
-{-# Inlinable bswFullSequence #-}
-bswFullSequence = lens f t
-  where f bsw = bsw^.bswPrefix <> bsw^.bswSequence <> bsw^.bswSuffix
-        t bsw (BioSequence s) =
-          let (pfx,ifxsfx) = BS.splitAt (bsw^.bswPrefix._BioSequence.to BS.length) s
-              (ifx,sfx) = BS.splitAt (bsw^.bswSequence._BioSequence.to BS.length) ifxsfx
-          in  bsw & bswPrefix._BioSequence .~ pfx
-                  & bswSequence._BioSequence .~ ifx
-                  & bswSuffix._BioSequence .~ sfx
+bswTake ∷ Int → BioSequenceWindow w ty FwdLocation → BioSequenceWindow w ty FwdLocation
+{-# Inlinable bswTake #-}
+bswTake k' bsw
+  = over bswPrefixLen (\l → min l k)
+  . over (bswSequence._BioSequence) (BS.take k)
+  . over bswSuffixLen (\l → max 0 $ k-len+slen)
+  . over bswLocation (fwdLocationTake k) $ bsw
+  where plen = bsw^.bswPrefixLen; len = bsw^.bswSequence._BioSequence.to BS.length
+        slen = bsw^.bswSuffixLen
+        k = max 0 $ min k' len
 
--- | For each element, attach the prefix as well.
+bswDrop ∷ Int → BioSequenceWindow w ty FwdLocation → BioSequenceWindow w ty FwdLocation
+{-# Inlinable bswDrop #-}
+bswDrop k' bsw
+  = over bswPrefixLen (\l → max 0 $ plen-k)
+  . over (bswSequence._BioSequence) (BS.drop k)
+  . over bswSuffixLen (\l → l - (max 0 $ k-len+slen))
+  . over bswLocation (fwdLocationDrop k) $ bsw
+  where plen = bsw^.bswPrefixLen; len = bsw^.bswSequence._BioSequence.to BS.length
+        slen = bsw^.bswSuffixLen
+        k = max 0 $ min k' len
+
+
+-- | For each element, attach the prefix as well. This modifies the the location info!
 --
 -- @1 2 3 4@ -> @01 12 23 34@
+--
+-- TODO are we sure this is correct for @MinusStrand@?
 
-attachPrefixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
+attachPrefixes
+  ∷ forall m w ty r
+  . (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
 {-# Inlinable attachPrefixes #-}
 attachPrefixes  =
-  let go (Left pfx) w = Right (set bswPrefix pfx w)
-      go (Right p)  w = Right (set bswPrefix (view bswSequence p) w)
+  let
+    f ∷ (BioSequence ty) → (BioSequenceWindow w ty FwdLocation) → BioSequenceWindow w ty FwdLocation
+    f pfx = let len = pfx^._BioSequence.to BS.length in set bswPrefixLen len
+          . over bswLocation (extendLocation len 0)
+          . over bswSequence (pfx <>)
+    -- the go function just attaches prefixes.
+    go (Left pfx) = Right . f pfx
+    go (Right p)  = Right . f (view bswSequence p)
   in  SP.map (\(Right w) → w) . SP.drop 1 . SP.scan go (Left $ BioSequence "") id
 
 -- | For each element, attach the suffix as well.
 --
 -- @1 2 3 4@ -> @12 23 34 40@
 
-attachSuffixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
-{-# Inlinable attachSuffixes #-}
-attachSuffixes xs = undefined
+--attachSuffixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
+--{-# Inlinable attachSuffixes #-}
+--attachSuffixes xs = undefined
 
 
 -- * DNA/RNA
@@ -337,9 +361,7 @@ instance Complement (BioSequence RNA) where
 
 instance (Complement (BioSequence ty)) ⇒ Complement (BioSequenceWindow w ty k) where
   {-# Inline complement #-}
-  complement = let g = view complement
-                   f = (\w → over bswSuffix g . over bswPrefix g . over bswSequence g $ w)
-                   {-# Inline g #-}
+  complement = let f = over bswSequence (view complement)
                    {-# Inline f #-}
                in  iso f f
 

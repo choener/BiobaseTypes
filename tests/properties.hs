@@ -5,14 +5,17 @@ import           Control.Lens
 import           Debug.Trace
 import qualified Data.ByteString.Char8 as BS8
 import           Test.QuickCheck.Modifiers
-import           Test.QuickCheck.Property
+import           Test.QuickCheck.Property ()
 import           Test.Tasty
+import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck (testProperty)
 import           Test.Tasty.TH
 
 import           Biobase.Types.BioSequence
 import           Biobase.Types.Bitscore
+import           Biobase.Types.Location
 import           Biobase.Types.Shape
+import           Biobase.Types.Strand
 import           Biobase.Types.Structure
 
 
@@ -63,6 +66,19 @@ fun_StructureShape_k_Reverse lvl rnass@(RNAss s2)
         flp ']' = '['
         flp x   = x
 
+-- | Given a BioSequenceWindow, and different takes and drops, check wether what we have corresponds to what we want
+
+case_bswTakeDrop ∷ Assertion
+case_bswTakeDrop = do
+  let w = BioSequenceWindow @"DNA" @DNA "test" 1 "ACGTAC" 3 (FwdLocation PlusStrand 0 6)
+  bswTake 0 w @?= BioSequenceWindow "test" 0 "" 0 (FwdLocation PlusStrand 0 0)
+  bswTake 1 w @?= BioSequenceWindow "test" 1 "A" 0 (FwdLocation PlusStrand 0 1)
+  bswTake 2 w @?= BioSequenceWindow "test" 1 "AC" 0 (FwdLocation PlusStrand 0 2)
+  bswTake 6 w @?= BioSequenceWindow "test" 1 "ACGTAC" 3 (FwdLocation PlusStrand 0 6)
+  --
+  bswDrop 0 w @?= BioSequenceWindow "test" 1 "ACGTAC" 3 (FwdLocation PlusStrand 0 6)
+  bswDrop 1 w @?= BioSequenceWindow "test" 0 "CGTAC" 3 (FwdLocation PlusStrand 1 5)
+  bswDrop 6 w @?= BioSequenceWindow "test" 0 "" 0 (FwdLocation PlusStrand 6 0)
 
 
 -- * generic stuff

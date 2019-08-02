@@ -30,9 +30,16 @@ data Location = Location
 makeLenses ''Location
 makePrisms ''Location
 
-instance Reversing Location where
-  {-# Inline reversing #-}
-  reversing = undefined
+instance Semigroup Location where
+  x <> y = let f z = z { _lLength = _lLength x + _lLength y }
+    in case x^.lStrand of
+      MinusStrand  → f y
+      _otherStrand → f x
+  {-# Inline (<>) #-}
+
+--instance Reversing Location where
+--  {-# Inline reversing #-}
+--  reversing = undefined
 
 
 -- | An isomorphism between locations, and triples of @Strand,Start,End@, where
@@ -82,6 +89,46 @@ data FwdLocation
 makeLenses ''FwdLocation
 makePrisms ''FwdLocation
 
+-- | Combining two FwdLocations yields the sum of their lengths. This assumes
+-- that @x@ and @y@ are next to each other.
+--
+-- TODO consider if that makes sense
+
+instance Semigroup FwdLocation where
+  x <> y = let f z = z { _fwdLength = _fwdLength x + _fwdLength y }
+    in case x^.fwdStrand of
+    MinusStrand → f y
+    _otherStrand → f x
+  {-# Inline (<>) #-}
+
+-- | Given a left and a right (possibly negative) extension, modify the Location
+
+extendLocation ∷ Int → Int → FwdLocation → FwdLocation
+{-# Inline extendLocation #-}
+extendLocation l r fwd = case fwd^.fwdStrand of
+  MinusStrand  → over fwdStart (+. r) $ over fwdLength (+(l+r)) fwd
+  _otherStrand → over fwdStart (-. l) $ over fwdLength (+(l+r)) fwd
+
+-- | Given a location, take at most @k@ elements, and return a location after
+-- this change.
+
+fwdLocationTake ∷ Int → FwdLocation → FwdLocation
+{-# Inline fwdLocationTake #-}
+fwdLocationTake k' l = let k = min k' $ l^.fwdLength
+  in case l^.fwdStrand of
+    MinusStrand  → over fwdStart (-. (l^.fwdLength - k)) . set fwdLength k $ l
+    _otherStrand → set fwdLength k l
+
+-- | Given a location, drop at most @k@ elements, and return a location after
+-- this change.
+
+fwdLocationDrop ∷ Int → FwdLocation → FwdLocation
+{-# Inline fwdLocationDrop #-}
+fwdLocationDrop k' l = let k = min k' $ l^.fwdLength
+  in case l^.fwdStrand of
+    MinusStrand  → over fwdLength (subtract k) l
+    _otherStrand → over fwdStart (+. k) . over fwdLength (subtract k) $ l
+
 -- | Provides a range in a notation as used by blast, for example. This
 -- isomorphism can translate back as well. @FwdLocation - 8 4 ^. blastRange1 ==
 -- 9 6 MinusStrand@, since these ranges are 1-based and start and end included.
@@ -108,12 +155,12 @@ instance Reversing FwdLocation where
     PlusStrand  → FwdLocation MinusStrand (index $ _fwdLength-1) _fwdLength
     MinusStrand → FwdLocation PlusStrand  0                      _fwdLength
 
--- An isomorphism between a 'Location' and the pair @('FwdLocation',Int)@
--- exists.
-
-locationPartial ∷ Iso' Location (FwdLocation,Int)
-{-# Inline locationPartial #-}
-locationPartial = iso l2r r2l where
-  l2r l = undefined
-  r2l (p,z) = undefined
+-- -- An isomorphism between a 'Location' and the pair @('FwdLocation',Int)@
+-- -- exists.
+-- 
+-- locationPartial ∷ Iso' Location (FwdLocation,Int)
+-- {-# Inline locationPartial #-}
+-- locationPartial = iso l2r r2l where
+--   l2r l = undefined
+--   r2l (p,z) = undefined
 
