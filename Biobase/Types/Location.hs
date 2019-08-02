@@ -62,13 +62,13 @@ startEndInclusive = iso l2r r2l
 -- 'FwdLocation' allows expressing the hit in the coordinate system of the plus
 -- strand. Tools like blast do something similar, and express locations on the
 -- minus as @y-x@ with @y>x@. The example below has
--- @FwdLocation + 2 4@ and @FwdLocation - 8 4@.
+-- @FwdLocation + 2 4@ and @FwdLocation - 2 4@.
 --
 -- @
 -- 0         1         2
 -- 012345678901234567890
---   >---                    +        2 4    Location +  2 4
---      <---                 Reversed 5 4    Location - 12 4
+--   >---                    Fwd + 2 4
+--                --->       Fwd - 2 4
 -- 098765432109876543210
 -- 2         1         0
 -- @
@@ -114,9 +114,9 @@ extendLocation l r fwd = case fwd^.fwdStrand of
 
 fwdLocationTake ∷ Int → FwdLocation → FwdLocation
 {-# Inline fwdLocationTake #-}
-fwdLocationTake k' l = let k = min k' $ l^.fwdLength
+fwdLocationTake k' l = let k = min k' $ l^.fwdLength; m = min k' $ l^.fwdLength-1
   in case l^.fwdStrand of
-    MinusStrand  → over fwdStart (-. (l^.fwdLength - k)) . set fwdLength k $ l
+    MinusStrand  → over fwdStart (-. (l^.fwdLength - max 1 k)) . set fwdLength k $ l
     _otherStrand → set fwdLength k l
 
 -- | Given a location, drop at most @k@ elements, and return a location after
@@ -124,10 +124,10 @@ fwdLocationTake k' l = let k = min k' $ l^.fwdLength
 
 fwdLocationDrop ∷ Int → FwdLocation → FwdLocation
 {-# Inline fwdLocationDrop #-}
-fwdLocationDrop k' l = let k = min k' $ l^.fwdLength
+fwdLocationDrop k' l = let k = min k' $ l^.fwdLength; m = min k' $ l^.fwdLength -1
   in case l^.fwdStrand of
     MinusStrand  → over fwdLength (subtract k) l
-    _otherStrand → over fwdStart (+. k) . over fwdLength (subtract k) $ l
+    _otherStrand → over fwdStart (+. m) . over fwdLength (subtract k) $ l
 
 -- | Provides a range in a notation as used by blast, for example. This
 -- isomorphism can translate back as well. @FwdLocation - 8 4 ^. blastRange1 ==
