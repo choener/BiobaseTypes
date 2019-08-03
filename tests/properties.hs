@@ -112,6 +112,11 @@ case_bswTakeDrop = do
   bswDrop 2 wm @?= BioSequenceWindow "test" 1   "TGCA" 1 (FwdLocation MinusStrand 0 4)
   bswDrop 5 wm @?= BioSequenceWindow "test" 0      "A" 1 (FwdLocation MinusStrand 0 1)
   bswDrop 6 wm @?= BioSequenceWindow "test" 0       "" 0 (FwdLocation MinusStrand 0 0)
+  --
+  -- TODO consider having [take,take,drop,drop], generate all permutations;
+  -- they should all yield the same result.
+  --
+
 
 
 

@@ -134,10 +134,10 @@ blastRange1 = iso f t where
           l = _fwdLength -1
       in  case _fwdStrand of
       PlusStrand  → (s, s+l,_fwdStrand)
-      MinusStrand → (s, s-l,_fwdStrand)
+      MinusStrand → (s+l, s,_fwdStrand)
   t (x,y,str) =
       let s = fromInt1 x
-          l = abs (x-y) +1
+          l = 1 + abs (x-y)
       in  FwdLocation str s l
 
 -- | Reversing a reversible location means moving the start to the end.
@@ -145,8 +145,8 @@ blastRange1 = iso f t where
 instance Reversing FwdLocation where
   {-# Inline reversing #-}
   reversing x = let l = x^.fwdLength;  in case x^.fwdStrand of
-    PlusStrand  → over fwdStart (+. max 0 (l-1)) . set fwdStrand MinusStrand $ x
-    MinusStrand → over fwdStart (-. max 0 (l-1)) . set fwdStrand PlusStrand  $ x
+    PlusStrand  → set fwdStrand MinusStrand $ x
+    MinusStrand → set fwdStrand PlusStrand  $ x
     UnknownStrand → x
 
 -- -- An isomorphism between a 'Location' and the pair @('FwdLocation',Int)@

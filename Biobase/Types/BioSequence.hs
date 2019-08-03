@@ -236,13 +236,15 @@ attachPrefixes
 {-# Inlinable attachPrefixes #-}
 attachPrefixes  =
   let
-    f ∷ (BioSequence ty) → (BioSequenceWindow w ty FwdLocation) → BioSequenceWindow w ty FwdLocation
-    f pfx = let len = pfx^._BioSequence.to BS.length in set bswPrefixLen len
-          . over bswLocation undefined -- (extendLocation len 0)
-          . over bswSequence (pfx <>)
+    f ∷ (BioSequenceWindow w ty FwdLocation) → (BioSequenceWindow w ty FwdLocation) → BioSequenceWindow w ty FwdLocation
+    f pfx =
+      let plen = pfx^.bswSequence._BioSequence.to BS.length
+      in  set bswPrefixLen plen
+          . over bswSequence (pfx^.bswSequence <>)
+          . over bswLocation (pfx^.bswLocation <>)
     -- the go function just attaches prefixes.
-    go (Left pfx) = Right . f pfx
-    go (Right p)  = Right . f (view bswSequence p)
+    go (Left _empty) = Right
+    go (Right p)     = Right . f p
   in  SP.map (\(Right w) → w) . SP.drop 1 . SP.scan go (Left $ BioSequence "") id
 
 -- | For each element, attach the suffix as well.
