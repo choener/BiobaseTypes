@@ -61,73 +61,66 @@ startEndInclusive = iso l2r r2l
 -- the @-@ strand, but the length of the contig is not known yet. In that case,
 -- 'FwdLocation' allows expressing the hit in the coordinate system of the plus
 -- strand. Tools like blast do something similar, and express locations on the
--- minus as @y-x@ with @y>x@. The example below has
--- @FwdLocation + 2 4@ and @FwdLocation - 2 4@.
+-- minus as @y-x@ with @y>x@.
 --
 -- @
--- 0         1         2
--- 012345678901234567890
---   >---                    Fwd + 2 4
---                --->       Fwd - 2 4
--- 098765432109876543210
--- 2         1         0
+-- 0123456789
+--  >-->
+--      <--<
+-- 9876543210
 -- @
 --
 -- 
 
 data FwdLocation
-  -- | Location, when it is not yet known how long the contig will be.
+  -- | "Plus"-based location.
   = FwdLocation
       { _fwdStrand ∷ !Strand
-      -- ^ the strand we are on.
+      -- ^ Strand we are on
       , _fwdStart  ∷ !(Index 0)
-      -- ^ start of the hit
+      -- ^ Start of the hit on the plus strand
       , _fwdLength ∷ !Int
-      -- ^ length of the hit
+      -- ^ Length of the hit
       }
   deriving (Eq,Ord,Read,Show,Generic)
 makeLenses ''FwdLocation
 makePrisms ''FwdLocation
 
 -- | Combining two FwdLocations yields the sum of their lengths. This assumes
--- that @x@ and @y@ are next to each other.
+-- that @x@ and @y@ are next to each other, or that it is ok if the @y@
+-- @fwdStart@ information may be lost.
 --
--- TODO consider if that makes sense
+-- TODO provide associativity test in @properties@.
 
 instance Semigroup FwdLocation where
-  x <> y = let f z = z { _fwdLength = _fwdLength x + _fwdLength y }
-    in case x^.fwdStrand of
-    MinusStrand → f y
-    _otherStrand → f x
+  x <> y = over fwdLength (+ view fwdLength y) x
   {-# Inline (<>) #-}
-
--- | Given a left and a right (possibly negative) extension, modify the Location
-
-extendLocation ∷ Int → Int → FwdLocation → FwdLocation
-{-# Inline extendLocation #-}
-extendLocation l r fwd = case fwd^.fwdStrand of
-  MinusStrand  → over fwdStart (+. r) $ over fwdLength (+(l+r)) fwd
-  _otherStrand → over fwdStart (-. l) $ over fwdLength (+(l+r)) fwd
 
 -- | Given a location, take at most @k@ elements, and return a location after
 -- this change.
 
 fwdLocationTake ∷ Int → FwdLocation → FwdLocation
 {-# Inline fwdLocationTake #-}
-fwdLocationTake k' l = let k = min k' $ l^.fwdLength; m = min k' $ l^.fwdLength-1
-  in case l^.fwdStrand of
-    MinusStrand  → over fwdStart (-. (l^.fwdLength - max 1 k)) . set fwdLength k $ l
-    _otherStrand → set fwdLength k l
+fwdLocationTake k' x =
+  let l = x^.fwdLength
+      k = max 0 $ min k' l      -- deal with at most the length of the location
+  in case x^.fwdStrand of
+    MinusStrand  → set fwdLength k $ over fwdStart (+. (l-k)) x
+    _otherStrand → set fwdLength k $                          x
 
 -- | Given a location, drop at most @k@ elements, and return a location after
 -- this change.
+--
+-- Note that @fwdLocationDrop 4 (FwdLocation PlusStrand 0 4) == FwdLocation 4 0@
 
 fwdLocationDrop ∷ Int → FwdLocation → FwdLocation
 {-# Inline fwdLocationDrop #-}
-fwdLocationDrop k' l = let k = min k' $ l^.fwdLength; m = min k' $ l^.fwdLength -1
-  in case l^.fwdStrand of
-    MinusStrand  → over fwdLength (subtract k) l
-    _otherStrand → over fwdStart (+. m) . over fwdLength (subtract k) $ l
+fwdLocationDrop k' x =
+  let l = x^.fwdLength
+      k = max 0 $ min k' l
+  in case x^.fwdStrand of
+    MinusStrand  → set fwdLength (l-k) $                            x
+    _otherStrand → set fwdLength (l-k) $ over fwdStart (+. min k l) x
 
 -- | Provides a range in a notation as used by blast, for example. This
 -- isomorphism can translate back as well. @FwdLocation - 8 4 ^. blastRange1 ==
@@ -151,9 +144,10 @@ blastRange1 = iso f t where
 
 instance Reversing FwdLocation where
   {-# Inline reversing #-}
-  reversing FwdLocation{..} = case _fwdStrand of
-    PlusStrand  → FwdLocation MinusStrand (index $ _fwdLength-1) _fwdLength
-    MinusStrand → FwdLocation PlusStrand  0                      _fwdLength
+  reversing x = let l = x^.fwdLength;  in case x^.fwdStrand of
+    PlusStrand  → over fwdStart (+. max 0 (l-1)) . set fwdStrand MinusStrand $ x
+    MinusStrand → over fwdStart (-. max 0 (l-1)) . set fwdStrand PlusStrand  $ x
+    UnknownStrand → x
 
 -- -- An isomorphism between a 'Location' and the pair @('FwdLocation',Int)@
 -- -- exists.

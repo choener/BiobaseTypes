@@ -238,7 +238,7 @@ attachPrefixes  =
   let
     f ∷ (BioSequence ty) → (BioSequenceWindow w ty FwdLocation) → BioSequenceWindow w ty FwdLocation
     f pfx = let len = pfx^._BioSequence.to BS.length in set bswPrefixLen len
-          . over bswLocation (extendLocation len 0)
+          . over bswLocation undefined -- (extendLocation len 0)
           . over bswSequence (pfx <>)
     -- the go function just attaches prefixes.
     go (Left pfx) = Right . f pfx
