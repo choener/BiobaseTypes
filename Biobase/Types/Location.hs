@@ -5,6 +5,7 @@
 
 module Biobase.Types.Location where
 
+import Control.DeepSeq
 import Control.Lens hiding (Index, index)
 import GHC.Generics (Generic)
 import GHC.TypeNats
@@ -29,6 +30,8 @@ data Location = Location
   } deriving (Eq,Ord,Read,Show,Generic)
 makeLenses ''Location
 makePrisms ''Location
+
+instance NFData Location
 
 instance Semigroup Location where
   x <> y = let f z = z { _lLength = _lLength x + _lLength y }
@@ -85,6 +88,8 @@ data FwdLocation
   deriving (Eq,Ord,Read,Show,Generic)
 makeLenses ''FwdLocation
 makePrisms ''FwdLocation
+
+instance NFData FwdLocation
 
 -- | Combining two FwdLocations yields the sum of their lengths. This assumes
 -- that @x@ and @y@ are next to each other, or that it is ok if the @y@
