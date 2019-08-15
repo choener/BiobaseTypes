@@ -190,6 +190,8 @@ data BioSequenceWindow w ty loc = BioSequenceWindow
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''BioSequenceWindow
 
+instance NFData loc ⇒ NFData (BioSequenceWindow w ty loc)
+
 instance (Reversing loc) ⇒ Reversing (BioSequenceWindow w ty loc) where
   {-# Inlinable reversing #-}
   reversing bsw = bsw
