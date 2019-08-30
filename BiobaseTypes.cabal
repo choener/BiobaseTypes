@@ -59,7 +59,7 @@ common deps
                --
                , bimaps                   == 0.1.0.*
                , ForestStructures         == 0.0.1.*
-               , PrimitiveArray           == 0.9.1.*
+               , PrimitiveArray           == 0.10.0.*
                , SciBaseTypes             == 0.1.0.*
   default-language:
     Haskell2010
