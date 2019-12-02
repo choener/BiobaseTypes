@@ -34,7 +34,7 @@ import qualified Biobase.Types.Index as BTI
 -- * Sequence identifiers
 
 newtype SequenceIdentifier (which ∷ k) = SequenceIdentifier { _sequenceIdentifier ∷ ByteString }
-  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
+  deriving stock (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeWrapped ''SequenceIdentifier
 makePrisms ''SequenceIdentifier
 
@@ -72,7 +72,7 @@ instance Ixed (BioSequence w) where
   ix k = _BioSequence . ix k . iso (chr . fromIntegral) (fromIntegral . ord)
   {-# Inline ix #-}
 
-deriving instance Reversing (BioSequence w)
+deriving newtype instance Reversing (BioSequence w)
 
 instance IsString (BioSequence Void) where
   fromString = BioSequence . BS.pack
