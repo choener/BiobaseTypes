@@ -69,6 +69,7 @@ common deps
                     , DeriveFoldable
                     , DeriveGeneric
                     , DeriveTraversable
+                    , DerivingStrategies
                     , FlexibleContexts
                     , FlexibleInstances
                     , GeneralizedNewtypeDeriving
