@@ -33,7 +33,7 @@ import qualified Biobase.Types.Index as BTI
 
 -- * Sequence identifiers
 
-newtype SequenceIdentifier (which ∷ k) = SequenceIdentifier { _sequenceIdentifier ∷ ByteString }
+newtype SequenceIdentifier (which :: k) = SequenceIdentifier { _sequenceIdentifier :: ByteString }
   deriving stock (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeWrapped ''SequenceIdentifier
 makePrisms ''SequenceIdentifier
@@ -57,8 +57,9 @@ data AA
 
 
 
-newtype BioSequence (which ∷ k) = BioSequence {_bioSequence ∷ ByteString}
-  deriving (Data, Typeable, Generic, Eq, Ord, Read, Show, Semigroup)
+newtype BioSequence (which :: k) = BioSequence {_bioSequence :: ByteString}
+  deriving stock (Data, Typeable, Generic, Eq, Ord, Read, Show)
+  deriving newtype (Semigroup)
 makeWrapped ''BioSequence
 makePrisms ''BioSequence
 
@@ -85,11 +86,11 @@ instance IsString (BioSequence Void) where
 --
 -- TODO write that converts explicitly
 
-mkRNAseq ∷ ByteString → BioSequence RNA
+mkRNAseq :: ByteString -> BioSequence RNA
 mkRNAseq = BioSequence . BS.map go . BS.map toUpper
   where go x | x `elem` acgu = x
              | otherwise     = 'N'
-        acgu ∷ String
+        acgu :: String
         acgu = "ACGU"
 
 instance IsString (BioSequence RNA) where
@@ -106,11 +107,11 @@ instance Arbitrary (BioSequence RNA) where
 
 -- * DNA
 
-mkDNAseq ∷ ByteString → (BioSequence DNA)
+mkDNAseq :: ByteString -> (BioSequence DNA)
 mkDNAseq = BioSequence . BS.map go . BS.map toUpper
   where go x | x `elem` acgt = x
              | otherwise     = 'N'
-        acgt ∷ String
+        acgt :: String
         acgt = "ACGT"
 
 instance IsString (BioSequence DNA) where
@@ -127,11 +128,11 @@ instance Arbitrary (BioSequence DNA) where
 
 -- * XNA
 
-mkXNAseq ∷ ByteString → (BioSequence XNA)
+mkXNAseq :: ByteString -> (BioSequence XNA)
 mkXNAseq = BioSequence . BS.map go . BS.map toUpper
   where go x | x `elem` acgtu = x
              | otherwise      = 'N'
-        acgtu ∷ String
+        acgtu :: String
         acgtu = "ACGTU"
 
 instance IsString (BioSequence XNA) where
@@ -148,11 +149,11 @@ instance Arbitrary (BioSequence XNA) where
 
 -- * Amino acid sequences
 
-mkAAseq ∷ ByteString → (BioSequence AA)
+mkAAseq :: ByteString -> (BioSequence AA)
 mkAAseq = BioSequence . BS.map go . BS.map toUpper
   where go x | x `elem` aas = x
              | otherwise    = 'X'
-        aas ∷ String
+        aas :: String
         aas = "ARNDCEQGHILKMFPSTWYVUO"
 
 instance IsString (BioSequence AA) where
@@ -175,24 +176,24 @@ instance Arbitrary (BioSequence AA) where
 -- location information and should be location or streamed location.
 
 data BioSequenceWindow w ty loc = BioSequenceWindow
-  { _bswIdentifier ∷ !(SequenceIdentifier w)
+  { _bswIdentifier :: !(SequenceIdentifier w)
     -- ^ Identifier for this window. Typically some fasta identifier
-  , _bswPrefixLen  ∷ !Int
+  , _bswPrefixLen  :: !Int
     -- ^ Any prefix for this sequence
-  , _bswSequence   ∷ !(BioSequence ty)
+  , _bswSequence   :: !(BioSequence ty)
     -- ^ The actual sequence, possibly with prefix of suffix attached
-  , _bswSuffixLen  ∷ !Int
+  , _bswSuffixLen  :: !Int
     -- ^ any suffix (length)
-  , _bswLocation   ∷ !loc
+  , _bswLocation   :: !loc
     -- ^ full location information. This should include the prefix and suffix,
     -- if any.
   }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''BioSequenceWindow
 
-instance NFData loc ⇒ NFData (BioSequenceWindow w ty loc)
+instance NFData loc => NFData (BioSequenceWindow w ty loc)
 
-instance (Reversing loc) ⇒ Reversing (BioSequenceWindow w ty loc) where
+instance (Reversing loc) => Reversing (BioSequenceWindow w ty loc) where
   {-# Inlinable reversing #-}
   reversing bsw = bsw
                 & bswPrefixLen .~ (bsw^.bswSuffixLen)
@@ -203,23 +204,23 @@ instance (Reversing loc) ⇒ Reversing (BioSequenceWindow w ty loc) where
 -- | Take only @k@ characters from a window, correctly taking into account the
 -- pfx-seq-sfx, and loc information.
 
-bswTake ∷ Int → BioSequenceWindow w ty FwdLocation → BioSequenceWindow w ty FwdLocation
+bswTake :: Int -> BioSequenceWindow w ty FwdLocation -> BioSequenceWindow w ty FwdLocation
 {-# Inlinable bswTake #-}
 bswTake k' bsw
-  = over bswPrefixLen (\l → min l k)
+  = over bswPrefixLen (\l -> min l k)
   . over (bswSequence._BioSequence) (BS.take k)
-  . over bswSuffixLen (\l → max 0 $ k-len+slen)
+  . over bswSuffixLen (\l -> max 0 $ k-len+slen)
   . over bswLocation (fwdLocationTake k) $ bsw
   where plen = bsw^.bswPrefixLen; len = bsw^.bswSequence._BioSequence.to BS.length
         slen = bsw^.bswSuffixLen
         k = max 0 $ min k' len
 
-bswDrop ∷ Int → BioSequenceWindow w ty FwdLocation → BioSequenceWindow w ty FwdLocation
+bswDrop :: Int -> BioSequenceWindow w ty FwdLocation -> BioSequenceWindow w ty FwdLocation
 {-# Inlinable bswDrop #-}
 bswDrop k' bsw
-  = over bswPrefixLen (\l → max 0 $ plen-k)
+  = over bswPrefixLen (\l -> max 0 $ plen-k)
   . over (bswSequence._BioSequence) (BS.drop k)
-  . over bswSuffixLen (\l → l - (max 0 $ k-len+slen))
+  . over bswSuffixLen (\l -> l - (max 0 $ k-len+slen))
   . over bswLocation (fwdLocationDrop k) $ bsw
   where plen = bsw^.bswPrefixLen; len = bsw^.bswSequence._BioSequence.to BS.length
         slen = bsw^.bswSuffixLen
@@ -233,12 +234,12 @@ bswDrop k' bsw
 -- TODO are we sure this is correct for @MinusStrand@?
 
 attachPrefixes
-  ∷ forall m w ty r
-  . (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
+  :: forall m w ty r
+  . (Monad m) => SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
 {-# Inlinable attachPrefixes #-}
 attachPrefixes  =
   let
-    f ∷ (BioSequenceWindow w ty FwdLocation) → (BioSequenceWindow w ty FwdLocation) → BioSequenceWindow w ty FwdLocation
+    f :: (BioSequenceWindow w ty FwdLocation) -> (BioSequenceWindow w ty FwdLocation) -> BioSequenceWindow w ty FwdLocation
     f pfx =
       let plen = pfx^.bswSequence._BioSequence.to BS.length
       in  set bswPrefixLen plen
@@ -247,13 +248,13 @@ attachPrefixes  =
     -- the go function just attaches prefixes.
     go (Left _empty) = Right
     go (Right p)     = Right . f p
-  in  SP.map (\(Right w) → w) . SP.drop 1 . SP.scan go (Left $ BioSequence "") id
+  in  SP.map (\(Right w) -> w) . SP.drop 1 . SP.scan go (Left $ BioSequence "") id
 
 -- | For each element, attach the suffix as well.
 --
 -- @1 2 3 4@ -> @12 23 34 40@
 
---attachSuffixes ∷ (Monad m) ⇒ SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r → SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
+--attachSuffixes :: (Monad m) => SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r -> SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
 --{-# Inlinable attachSuffixes #-}
 --attachSuffixes xs = undefined
 
@@ -263,51 +264,51 @@ attachPrefixes  =
 -- | Simple case translation from @U@ to @T@. with upper and lower-case
 -- awareness.
 
-rna2dna ∷ Char → Char
+rna2dna :: Char -> Char
 rna2dna = \case
-  'U' → 'T'
-  'u' → 't'
-  x   → x
+  'U' -> 'T'
+  'u' -> 't'
+  x   -> x
 {-# Inline rna2dna #-}
 
 -- | Single character RNA complement.
 
-rnaComplement ∷ Char → Char
+rnaComplement :: Char -> Char
 rnaComplement = \case
-  'A' → 'U'
-  'a' → 'u'
-  'C' → 'G'
-  'c' → 'g'
-  'G' → 'C'
-  'g' → 'c'
-  'U' → 'A'
-  'u' → 'a'
-  x   → x
+  'A' -> 'U'
+  'a' -> 'u'
+  'C' -> 'G'
+  'c' -> 'g'
+  'G' -> 'C'
+  'g' -> 'c'
+  'U' -> 'A'
+  'u' -> 'a'
+  x   -> x
 {-# Inline rnaComplement #-}
 
 -- | Simple case translation from @T@ to @U@ with upper- and lower-case
 -- awareness.
 
-dna2rna ∷ Char → Char
+dna2rna :: Char -> Char
 dna2rna = \case
-  'T' → 'U'
-  't' → 'u'
-  x   → x
+  'T' -> 'U'
+  't' -> 'u'
+  x   -> x
 {-# Inline dna2rna #-}
 
 -- | Single character DNA complement.
 
-dnaComplement ∷ Char → Char
+dnaComplement :: Char -> Char
 dnaComplement = \case
-  'A' → 'T'
-  'a' → 't'
-  'C' → 'G'
-  'c' → 'g'
-  'G' → 'C'
-  'g' → 'c'
-  'T' → 'A'
-  't' → 'a'
-  x   → x
+  'A' -> 'T'
+  'a' -> 't'
+  'C' -> 'G'
+  'c' -> 'g'
+  'G' -> 'C'
+  'g' -> 'c'
+  'T' -> 'A'
+  't' -> 'a'
+  x   -> x
 {-# Inline dnaComplement #-}
 
 
@@ -325,8 +326,8 @@ dnaComplement = \case
 -- @@
 
 class Transcribe f where
-  type TranscribeTo f ∷ *
-  transcribe ∷ Iso' f (TranscribeTo f)
+  type TranscribeTo f :: *
+  transcribe :: Iso' f (TranscribeTo f)
 
 -- | Transcribe a DNA sequence into an RNA sequence. This does not @reverse@
 -- the sequence!
@@ -349,7 +350,7 @@ instance Transcribe (BioSequence RNA) where
 -- | The complement of a biosequence.
 
 class Complement f where
-  complement ∷ Iso' f f
+  complement :: Iso' f f
 
 instance Complement (BioSequence DNA) where
   {-# Inline complement #-}
@@ -363,13 +364,13 @@ instance Complement (BioSequence RNA) where
                    {-# Inline f #-}
                in  iso f f
 
-instance (Complement (BioSequence ty)) ⇒ Complement (BioSequenceWindow w ty k) where
+instance (Complement (BioSequence ty)) => Complement (BioSequenceWindow w ty k) where
   {-# Inline complement #-}
   complement = let f = over bswSequence (view complement)
                    {-# Inline f #-}
                in  iso f f
 
-reverseComplement ∷ (Complement f, Reversing f) ⇒ Iso' f f
+reverseComplement :: (Complement f, Reversing f) => Iso' f f
 {-# Inline reverseComplement #-}
 reverseComplement = reversed . complement
 

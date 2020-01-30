@@ -44,15 +44,15 @@ instance Read Strand where
   readsPrec _ xs = do
     (pm,s) <- lex xs
     case pm of
-      "PlusStrand" → return (PlusStrand, s)
-      "MinusStrand" → return (MinusStrand, s)
-      "NotStranded" → return (NotStranded, s)
-      "UnknownStrand" → return (UnknownStrand, s)
-      [x] | x `elem` ("+Pp" ∷ String) → return (PlusStrand,s)
-          | x `elem` ("-Mm" ∷ String) → return (MinusStrand,s)
-          | x `elem` ("."   ∷ String) → return (NotStranded,s)
-          | x `elem` ("?"   ∷ String) → return (UnknownStrand,s)
-      _ → []
+      "PlusStrand" -> return (PlusStrand, s)
+      "MinusStrand" -> return (MinusStrand, s)
+      "NotStranded" -> return (NotStranded, s)
+      "UnknownStrand" -> return (UnknownStrand, s)
+      [x] | x `elem` ("+Pp" :: String) -> return (PlusStrand,s)
+          | x `elem` ("-Mm" :: String) -> return (MinusStrand,s)
+          | x `elem` ("."   :: String) -> return (NotStranded,s)
+          | x `elem` ("?"   :: String) -> return (UnknownStrand,s)
+      _ -> []
 
 instance Bounded Strand where
   minBound = PlusStrand
