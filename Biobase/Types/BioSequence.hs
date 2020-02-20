@@ -24,6 +24,8 @@ import qualified Streaming.Prelude as SP
 import qualified Streaming as S
 import qualified Test.QuickCheck as TQ
 import           Test.QuickCheck (Arbitrary(..))
+import Data.Coerce
+import Debug.Trace
 
 import           Biobase.Types.Location
 import           Biobase.Types.Strand
@@ -43,7 +45,7 @@ class BioSeqLenses b where
   -- | Lens into all but the last @k@ characters
   bsDropEnd :: Int -> Lens' b b
   -- | length of this biosequence
-  bsLength :: b -> Int
+  bsLength :: Getter b Int
 
 -- * Sequence identifiers
 
@@ -79,6 +81,7 @@ newtype BioSequence (which :: k) = BioSequence {_bioSequence :: ByteString}
   deriving newtype (Semigroup)
 makeWrapped ''BioSequence
 makePrisms ''BioSequence
+makeLenses ''BioSequence
 
 instance NFData (BioSequence w)
 
@@ -100,6 +103,10 @@ instance BioSeqLenses (BioSequence w) where
   bsTake k = lens (over _BioSequence (BS.take k)) (\old new -> new <> over _BioSequence (BS.drop k) old)
   {-# Inline bsTakeEnd #-}
   bsTakeEnd k = lens (over _BioSequence (\s -> BS.drop (BS.length s -k) s)) (\old new -> over _BioSequence (\s -> BS.take (BS.length s-k) s) old <> new)
+  {-# Inline bsLength #-}
+  bsLength = _BioSequence.to BS.length
+  {-# Inline bsDrop #-}
+  bsDrop k = lens (over _BioSequence (BS.drop k)) (\old new -> over _BioSequence (BS.take k) old <> new)
 
 
 
@@ -214,6 +221,9 @@ data BioSequenceWindow w ty loc = BioSequenceWindow
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''BioSequenceWindow
 
+bswRetagW :: BioSequenceWindow w ty loc -> BioSequenceWindow v ty loc
+bswRetagW = over bswIdentifier coerce
+
 instance NFData loc => NFData (BioSequenceWindow w ty loc)
 
 instance (Reversing loc) => Reversing (BioSequenceWindow w ty loc) where
@@ -225,6 +235,8 @@ instance (Reversing loc) => Reversing (BioSequenceWindow w ty loc) where
                 & bswLocation .~ (bsw^.bswLocation.reversed)
 
 instance BioSeqLenses (BioSequenceWindow w ty FwdLocation) where
+  {-# Inline bsLength #-}
+  bsLength = bswSequence.bsLength
 
 bswPrefix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequence ty) -- (BioSequenceWindow w ty FwdLocation)
 {-# Inlinable bswPrefix #-}
@@ -232,11 +244,11 @@ bswPrefix = error "implement bswPrefix"
 
 bswInfix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequence ty)
 {-# Inlinable bswInfix #-}
-bswInfix = error "implement bswInfix"
+bswInfix = trace "implement bswInfix correctly" bswSequence
 
 bswSuffix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequence ty)
 {-# Inlinable bswSuffix #-}
-bswSuffix = error "implement bswSuffix"
+bswSuffix = trace "implement bswSuffix correctly" bswSequence
 
 bswSeqLen :: Getter (BioSequenceWindow w ty FwdLocation) Int
 bswSeqLen = error "implement bswSeqLen"
