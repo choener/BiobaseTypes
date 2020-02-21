@@ -30,6 +30,7 @@ import Debug.Trace
 import           Biobase.Types.Location
 import           Biobase.Types.Strand
 import qualified Biobase.Types.Index as BTI
+import Data.Info
 
 
 
@@ -286,6 +287,19 @@ bswDrop k' bsw
         slen = bsw^.bswSuffixLen
         k = max 0 $ min k' len
 
+-- | Provides an informative string indicating the current window being worked on. Requires length
+-- of pretty string requested. Not for computers, but for logging what is being worked on. Should be
+-- one line at most, not produce line breaks.
+--
+-- @...PFX [Start] IFX...IFX [End] SFX ...@
+--
+-- TODO possibly be better as a @Doc@ for prettier printing.
+--
+-- TODO should end up being a class method for the future @class Info a where info :: a -> String@
+-- in @DPUtils@.
+
+instance Info (BioSequenceWindow w ty loc) where
+  info bsw = "todo: info bsw"
 
 -- | For each element, attach the prefix as well. This modifies the the location info!
 --
