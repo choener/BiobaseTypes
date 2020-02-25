@@ -108,6 +108,8 @@ instance BioSeqLenses (BioSequence w) where
   bsLength = _BioSequence.to BS.length
   {-# Inline bsDrop #-}
   bsDrop k = lens (over _BioSequence (BS.drop k)) (\old new -> over _BioSequence (BS.take k) old <> new)
+  {-# Inline bsDropEnd #-}
+  bsDropEnd k = lens (over _BioSequence (\s -> BS.take (BS.length s -k) s)) (\old new -> over _BioSequence (\s -> BS.take (BS.length s-k) s) old <> new)
 
 
 
@@ -238,24 +240,9 @@ instance (Reversing loc) => Reversing (BioSequenceWindow w ty loc) where
 instance BioSeqLenses (BioSequenceWindow w ty FwdLocation) where
   {-# Inline bsLength #-}
   bsLength = bswSequence.bsLength
-
-bswPrefix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequence ty) -- (BioSequenceWindow w ty FwdLocation)
-{-# Inlinable bswPrefix #-}
-bswPrefix = error "implement bswPrefix"
-
-bswInfix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequence ty)
-{-# Inlinable bswInfix #-}
-bswInfix = trace "implement bswInfix correctly" bswSequence
-
-bswSuffix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequence ty)
-{-# Inlinable bswSuffix #-}
-bswSuffix = trace "implement bswSuffix correctly" bswSequence
-
-bswSeqLen :: Getter (BioSequenceWindow w ty FwdLocation) Int
-bswSeqLen = error "implement bswSeqLen"
-
--- | Take only @k@ characters from a window, correctly taking into account the
--- pfx-seq-sfx, and loc information.
+  -- | Take only @k@ characters from a window, correctly taking into account the
+  -- pfx-seq-sfx, and loc information.
+  bsTake = undefined -- bswTake
 
 bswTake :: Int -> BioSequenceWindow w ty FwdLocation -> BioSequenceWindow w ty FwdLocation
 {-# Inlinable bswTake #-}
@@ -267,6 +254,20 @@ bswTake k' bsw
   where plen = bsw^.bswPrefixLen; len = bsw^.bswSequence._BioSequence.to BS.length
         slen = bsw^.bswSuffixLen
         k = max 0 $ min k' len
+
+
+bswPrefix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequenceWindow w ty FwdLocation)
+{-# Inlinable bswPrefix #-}
+bswPrefix = lens (\w -> w^.bsTake (w^.bswPrefixLen)) (\w p -> w & bsTake (w^.bswPrefixLen) .~ p)
+
+bswInfix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequenceWindow w ty FwdLocation)
+{-# Inlinable bswInfix #-}
+bswInfix = lens (\w -> w^.bsDrop (w^.bswPrefixLen).bsDropEnd (w^.bswSuffixLen))
+                (\w i -> w & bsDrop (w^.bswPrefixLen).bsDropEnd (w^.bswSuffixLen) .~ i)
+
+bswSuffix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequenceWindow w ty FwdLocation)
+{-# Inlinable bswSuffix #-}
+bswSuffix = lens (\w -> w^.bsTakeEnd (w^.bswSuffixLen)) (\w s -> w & bsTakeEnd (w^.bswSuffixLen) .~ s)
 
 -- | Keep only the last @k@ characters from a biosequence window.
 --
