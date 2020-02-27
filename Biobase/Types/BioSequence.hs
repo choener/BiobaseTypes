@@ -22,6 +22,7 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.UTF8 as BSU
 import qualified Streaming.Prelude as SP
 import qualified Streaming as S
+import qualified Streaming.Internal as SI
 import qualified Test.QuickCheck as TQ
 import           Test.QuickCheck (Arbitrary(..))
 import Data.Coerce
@@ -45,6 +46,8 @@ class BioSeqLenses b where
   bsDrop :: Int -> Lens' b b
   -- | Lens into all but the last @k@ characters
   bsDropEnd :: Int -> Lens' b b
+  -- | Lens that splits at a position
+  bsSplitAt :: Int -> Lens' b (b,b)
   -- | length of this biosequence
   bsLength :: Getter b Int
 
@@ -110,6 +113,8 @@ instance BioSeqLenses (BioSequence w) where
   bsDrop k = lens (over _BioSequence (BS.drop k)) (\old new -> over _BioSequence (BS.take k) old <> new)
   {-# Inline bsDropEnd #-}
   bsDropEnd k = lens (over _BioSequence (\s -> BS.take (BS.length s -k) s)) (\old new -> over _BioSequence (\s -> BS.take (BS.length s-k) s) old <> new)
+  {-# Inline bsSplitAt #-}
+  bsSplitAt k = lens (\b -> (view (bsTake k) b, view (bsDrop k) b)) (\old (h,t) -> h <> t)
 
 
 
@@ -209,22 +214,35 @@ instance Arbitrary (BioSequence AA) where
 -- location information and should be location or streamed location.
 
 data BioSequenceWindow w ty loc = BioSequenceWindow
-  { _bswIdentifier :: !(SequenceIdentifier w)
+  { _bswIdentifier    :: !(SequenceIdentifier w)
     -- ^ Identifier for this window. Typically some fasta identifier
-  , _bswPrefixLen  :: !Int
-    -- ^ Any prefix for this sequence
-  , _bswSequence   :: !(BioSequence ty)
-    -- ^ The actual sequence, possibly with prefix of suffix attached
-  , _bswSuffixLen  :: !Int
-    -- ^ any suffix (length)
-  , _bswLocation   :: !loc
-    -- ^ full location information. This should include the prefix and suffix,
-    -- if any.
+  , _bswPrefix        :: !(BioSequence ty)
+  , _bswInfix         :: !(BioSequence ty)
+  , _bswSuffix        :: !(BioSequence ty)
+  , _bswInfixLocation :: !loc
+    -- ^ Location of the infix sequence
   }
   deriving (Data, Typeable, Generic, Eq, Ord, Read, Show)
 makeLenses ''BioSequenceWindow
 
+-- | Lens into the full sequence. May not change the sequence length
+
+bswSequence :: Lens (BioSequenceWindow w ty loc) (BioSequenceWindow w ty' loc) (BioSequence ty) (BioSequence ty')
+{-# Inlinable bswSequence #-}
+bswSequence = lens (\w -> _bswPrefix w <> _bswInfix w <> _bswSuffix w)
+                   (\w bs -> let (p,is) = bs^.bsSplitAt (w^.bswPrefix.bsLength)
+                                 (i,s ) = is^.bsSplitAt (w^.bswInfix.bsLength)
+                             in w { _bswPrefix = p, _bswInfix = i, _bswSuffix = s } )
+
+-- | Get the position of the whole sequence
+
+bswLocation :: ModifyLocation loc => Getter (BioSequenceWindow w ty loc) loc
+{-# Inlinable bswLocation #-}
+bswLocation = to $ \w -> locMoveLeftEnd (w^.bswPrefix.bsLength.to negate)
+                 . locMoveRightEnd (w^.bswSuffix.bsLength) $ w^.bswInfixLocation
+
 bswRetagW :: BioSequenceWindow w ty loc -> BioSequenceWindow v ty loc
+{-# Inlinable bswRetagW #-}
 bswRetagW = over bswIdentifier coerce
 
 instance NFData loc => NFData (BioSequenceWindow w ty loc)
@@ -232,61 +250,19 @@ instance NFData loc => NFData (BioSequenceWindow w ty loc)
 instance (Reversing loc) => Reversing (BioSequenceWindow w ty loc) where
   {-# Inlinable reversing #-}
   reversing bsw = bsw
-                & bswPrefixLen .~ (bsw^.bswSuffixLen)
-                & bswSuffixLen .~ (bsw^.bswPrefixLen)
-                & bswSequence .~ (bsw^.bswSequence.reversed)
-                & bswLocation .~ (bsw^.bswLocation.reversed)
+                & bswPrefix .~ (bsw^.bswSuffix.reversed)
+                & bswSuffix .~ (bsw^.bswPrefix.reversed)
+                & bswInfix  .~ (bsw^.bswInfix.reversed)
+                & bswInfixLocation .~ (bsw^.bswInfixLocation.reversed)
 
 instance BioSeqLenses (BioSequenceWindow w ty FwdLocation) where
   {-# Inline bsLength #-}
   bsLength = bswSequence.bsLength
   -- | Take only @k@ characters from a window, correctly taking into account the
   -- pfx-seq-sfx, and loc information.
-  bsTake = undefined -- bswTake
-
-bswTake :: Int -> BioSequenceWindow w ty FwdLocation -> BioSequenceWindow w ty FwdLocation
-{-# Inlinable bswTake #-}
-bswTake k' bsw
-  = over bswPrefixLen (\l -> min l k)
-  . over (bswSequence._BioSequence) (BS.take k)
-  . over bswSuffixLen (\l -> max 0 $ k-len+slen)
-  . over bswLocation (fwdLocationTake k) $ bsw
-  where plen = bsw^.bswPrefixLen; len = bsw^.bswSequence._BioSequence.to BS.length
-        slen = bsw^.bswSuffixLen
-        k = max 0 $ min k' len
+  bsTake k = undefined -- bswTake
 
 
-bswPrefix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequenceWindow w ty FwdLocation)
-{-# Inlinable bswPrefix #-}
-bswPrefix = lens (\w -> w^.bsTake (w^.bswPrefixLen)) (\w p -> w & bsTake (w^.bswPrefixLen) .~ p)
-
-bswInfix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequenceWindow w ty FwdLocation)
-{-# Inlinable bswInfix #-}
-bswInfix = lens (\w -> w^.bsDrop (w^.bswPrefixLen).bsDropEnd (w^.bswSuffixLen))
-                (\w i -> w & bsDrop (w^.bswPrefixLen).bsDropEnd (w^.bswSuffixLen) .~ i)
-
-bswSuffix :: Lens' (BioSequenceWindow w ty FwdLocation) (BioSequenceWindow w ty FwdLocation)
-{-# Inlinable bswSuffix #-}
-bswSuffix = lens (\w -> w^.bsTakeEnd (w^.bswSuffixLen)) (\w s -> w & bsTakeEnd (w^.bswSuffixLen) .~ s)
-
--- | Keep only the last @k@ characters from a biosequence window.
---
--- TODO turn into lens
-
-bswTakeEnd :: Int -> BioSequenceWindow w ty FwdLocation -> BioSequenceWindow w ty FwdLocation
-{-# Inlinable bswTakeEnd #-}
-bswTakeEnd k' bsw = error "implement bswTakeEnd"
-
-bswDrop :: Int -> BioSequenceWindow w ty FwdLocation -> BioSequenceWindow w ty FwdLocation
-{-# Inlinable bswDrop #-}
-bswDrop k' bsw
-  = over bswPrefixLen (\l -> max 0 $ plen-k)
-  . over (bswSequence._BioSequence) (BS.drop k)
-  . over bswSuffixLen (\l -> l - (max 0 $ k-len+slen))
-  . over bswLocation (fwdLocationDrop k) $ bsw
-  where plen = bsw^.bswPrefixLen; len = bsw^.bswSequence._BioSequence.to BS.length
-        slen = bsw^.bswSuffixLen
-        k = max 0 $ min k' len
 
 -- | Provides an informative string indicating the current window being worked on. Requires length
 -- of pretty string requested. Not for computers, but for logging what is being worked on. Should be
@@ -295,43 +271,52 @@ bswDrop k' bsw
 -- @...PFX [Start] IFX...IFX [End] SFX ...@
 --
 -- TODO possibly be better as a @Doc@ for prettier printing.
---
--- TODO should end up being a class method for the future @class Info a where info :: a -> String@
--- in @DPUtils@.
 
 instance Info (BioSequenceWindow w ty loc) where
   info bsw = "todo: info bsw"
 
--- | For each element, attach the prefix as well. This modifies the the location info!
+-- | For each element, attach the prefix as well. The @Int@ indicates the maximal prefix length to
+-- attach.
 --
 -- @1 2 3 4@ -> @01 12 23 34@
 --
 -- TODO are we sure this is correct for @MinusStrand@?
 
 attachPrefixes
-  :: forall m w ty r
-  . (Monad m) => SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
+  :: Monad m
+  => Int
+  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
+  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
 {-# Inlinable attachPrefixes #-}
-attachPrefixes  =
-  let
-    f :: (BioSequenceWindow w ty FwdLocation) -> (BioSequenceWindow w ty FwdLocation) -> BioSequenceWindow w ty FwdLocation
-    f pfx =
-      let plen = pfx^.bswSequence._BioSequence.to BS.length
-      in  set bswPrefixLen plen
-          . over bswSequence (pfx^.bswSequence <>)
-          . over bswLocation (pfx^.bswLocation <>)
-    -- the go function just attaches prefixes.
-    go (Left _empty) = Right
-    go (Right p)     = Right . f p
-  in  SP.map (\(Right w) -> w) . SP.drop 1 . SP.scan go (Left $ BioSequence "") id
+attachPrefixes k = SP.map (\(Just w) -> w) . SP.drop 1 . SP.scan go Nothing id
+  where
+    go Nothing = Just
+    go (Just p) = Just . set bswPrefix (view (bswInfix.bsTakeEnd k) p)
 
 -- | For each element, attach the suffix as well.
 --
 -- @1 2 3 4@ -> @12 23 34 40@
 
---attachSuffixes :: (Monad m) => SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r -> SP.Stream (SP.Of (BioSequenceWindow w ty k)) m r
---{-# Inlinable attachSuffixes #-}
---attachSuffixes xs = undefined
+attachSuffixes
+  :: Monad m
+  => Int
+  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
+  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
+{-# Inlinable attachSuffixes #-}
+attachSuffixes k = loop Nothing
+  where
+    loop Nothing = \case
+      SI.Return r -> SI.Return r
+      SI.Effect m -> SI.Effect $ fmap (loop Nothing) m
+      SI.Step (a SP.:> rest) -> loop (Just a) rest
+    loop (Just p) = \case
+      SI.Return r -> SI.Step (p SP.:> SI.Return r)
+      SI.Effect m -> SI.Effect $ fmap (loop (Just p)) m
+      SI.Step (a SP.:> rest) ->
+        let p' = p & set bswSuffix (view (bswInfix.bsTake k) a)
+        in  SI.Step (p' SP.:> loop (Just a) rest)
+
+
 
 
 -- * DNA/RNA
@@ -441,7 +426,7 @@ instance Complement (BioSequence RNA) where
 
 instance (Complement (BioSequence ty)) => Complement (BioSequenceWindow w ty k) where
   {-# Inline complement #-}
-  complement = let f = over bswSequence (view complement)
+  complement = let f = over bswPrefix (view complement) . over bswInfix (view complement) . over bswSuffix (view complement)
                    {-# Inline f #-}
                in  iso f f
 

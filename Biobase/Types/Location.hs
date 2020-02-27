@@ -16,6 +16,16 @@ import Biobase.Types.Strand
 
 
 
+-- | Move locations. Note that @locMoveLeftEnd -10@ enlarges the location by 10 units!
+
+class ModifyLocation loc where
+  -- | Moves the left end, enlarging or shrinking
+  locMoveLeftEnd   :: Int -> loc -> loc
+  -- | Moves the right end
+  locMoveRightEnd  :: Int -> loc -> loc
+
+
+
 -- | Location information.
 
 data Location = Location
@@ -100,6 +110,10 @@ instance NFData FwdLocation
 instance Semigroup FwdLocation where
   x <> y = over fwdLength (+ view fwdLength y) x
   {-# Inline (<>) #-}
+
+instance ModifyLocation FwdLocation where
+  locMoveLeftEnd k = over fwdStart (+. k) . over fwdLength (subtract k)
+  locMoveRightEnd k = over fwdLength (+k)
 
 -- | Given a location, take at most @k@ elements, and return a location after
 -- this change.
