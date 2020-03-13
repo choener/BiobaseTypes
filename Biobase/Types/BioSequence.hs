@@ -280,47 +280,6 @@ instance (Reversing loc) => Reversing (BioSequenceWindow w ty loc) where
 instance Info (BioSequenceWindow w ty loc) where
   info bsw = "todo: info bsw"
 
--- | For each element, attach the prefix as well. The @Int@ indicates the maximal prefix length to
--- attach.
---
--- @1 2 3 4@ -> @01 12 23 34@
---
--- TODO are we sure this is correct for @MinusStrand@?
-
-attachPrefixes
-  :: Monad m
-  => Int
-  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
-  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
-{-# Inlinable attachPrefixes #-}
-attachPrefixes k = SP.map (\(Just w) -> w) . SP.drop 1 . SP.scan go Nothing id
-  where
-    go Nothing = Just
-    go (Just p) = Just . set bswPrefix (view (bswInfix.bsTakeEnd k) p)
-
--- | For each element, attach the suffix as well.
---
--- @1 2 3 4@ -> @12 23 34 40@
-
-attachSuffixes
-  :: Monad m
-  => Int
-  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
-  -> SP.Stream (SP.Of (BioSequenceWindow w ty FwdLocation)) m r
-{-# Inlinable attachSuffixes #-}
-attachSuffixes k = loop Nothing
-  where
-    loop Nothing = \case
-      SI.Return r -> SI.Return r
-      SI.Effect m -> SI.Effect $ fmap (loop Nothing) m
-      SI.Step (a SP.:> rest) -> loop (Just a) rest
-    loop (Just p) = \case
-      SI.Return r -> SI.Step (p SP.:> SI.Return r)
-      SI.Effect m -> SI.Effect $ fmap (loop (Just p)) m
-      SI.Step (a SP.:> rest) ->
-        let p' = p & set bswSuffix (view (bswInfix.bsTake k) a)
-        in  SI.Step (p' SP.:> loop (Just a) rest)
-
 -}
 
 

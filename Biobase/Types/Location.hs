@@ -12,6 +12,8 @@ import GHC.Generics (Generic)
 import GHC.TypeNats
 import Prelude hiding (length)
 import qualified Data.ByteString as BS
+import qualified Streaming.Internal as SI
+import qualified Streaming.Prelude as SP
 import Text.Printf
 
 import Biobase.Types.BioSequence
@@ -87,6 +89,32 @@ instance Complement (BioSequence w) => Complement (Location i FwdPosition (BioSe
 instance (Info (BioSequence w)) => Info (Location i FwdPosition (BioSequence w)) where
   info loc = printf "%s %s %s" (loc^.locIdentifier^.to show) (show $ loc^.locPosition) (loc^.locSequence.to info)
 
+data PIS i p s = PIS
+  { _pisPrefix  :: Maybe (Location i p s)
+  , _pisInfix   :: !(Location i p s)
+  , _pisSuffix  :: Maybe (Location i p s)
+  }
+makeLenses ''PIS
+
+pis ifx = PIS Nothing ifx Nothing
+
+retagPis :: PIS i p s -> PIS j p s
+retagPis (PIS p i s) = PIS (fmap retagLocation p) (retagLocation i) (fmap retagLocation s)
+
+instance Reversing (PIS i FwdPosition (BioSequence w)) where
+
+instance Complement (PIS i FwdPosition (BioSequence w)) where
+
+pisSequence :: Lens (PIS i p (BioSequence s)) (PIS i p (BioSequence t)) (BioSequence s) (BioSequence t)
+{-# Inline pisSequence #-}
+pisSequence = lens f t where
+  v = view (locSequence.bioSequence)
+  f (PIS p i s) = BioSequence $ maybe BS.empty v p `BS.append` v i `BS.append` maybe BS.empty v s
+  t (PIS p i s) (BioSequence str) =
+    let (pfx,ifxsfx) = over _1 BioSequence   $ BS.splitAt (maybe 0 (BS.length . v) p) str
+        (ifx,sfx   ) = over both BioSequence $ BS.splitAt (BS.length $ v i) ifxsfx
+    in  PIS (set (_Just . locSequence) pfx p) (set locSequence ifx i) (set (_Just . locSequence) sfx s)
+
 
 
 -- | Given a @Location@ with a @BioSequence@, replace the sequence with its length.
@@ -114,4 +142,49 @@ blastRange1 = f -- iso f t
 --      let s = fromInt1 x
 --          l = 1 + abs (x-y)
 --      in  Location (FwdPosition pm s) l
+
+
+
+-- | For each element, attach the prefix as well. The @Int@ indicates the maximal prefix length to
+-- attach.
+--
+-- @1 2 3 4@ -> @01 12 23 34@
+--
+-- TODO are we sure this is correct for @MinusStrand@?
+
+attachPrefixes
+  :: ( Monad m, ModifyLocation p s )
+  => Int
+  -> SP.Stream (SP.Of (PIS i p s)) m r
+  -> SP.Stream (SP.Of (PIS i p s)) m r
+{-# Inlinable attachPrefixes #-}
+attachPrefixes k = SP.map (\(Just w) -> w) . SP.drop 1 . SP.scan go Nothing id
+  where
+    go Nothing = Just
+    go (Just p) = Just . set pisPrefix (Just . locTakeEnd k $ view pisInfix p)
+
+
+
+-- | For each element, attach the suffix as well.
+--
+-- @1 2 3 4@ -> @12 23 34 40@
+
+attachSuffixes
+  :: ( Monad m, ModifyLocation p s )
+  => Int
+  -> SP.Stream (SP.Of (PIS i p s)) m r
+  -> SP.Stream (SP.Of (PIS i p s)) m r
+{-# Inlinable attachSuffixes #-}
+attachSuffixes k = loop Nothing
+  where
+    loop Nothing = \case
+      SI.Return r -> SI.Return r
+      SI.Effect m -> SI.Effect $ fmap (loop Nothing) m
+      SI.Step (a SP.:> rest) -> loop (Just a) rest
+    loop (Just p) = \case
+      SI.Return r -> SI.Step (p SP.:> SI.Return r)
+      SI.Effect m -> SI.Effect $ fmap (loop (Just p)) m
+      SI.Step (a SP.:> rest) ->
+        let p' = p & set pisSuffix (Just . locTake k $ view pisInfix a)
+        in  SI.Step (p' SP.:> loop (Just a) rest)
 
