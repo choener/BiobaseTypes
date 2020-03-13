@@ -12,9 +12,11 @@ import Control.Lens hiding (Index, index)
 import GHC.Generics (Generic)
 import GHC.TypeNats
 import Prelude hiding (length)
+import Text.Printf
 
 import Biobase.Types.Index
 import Biobase.Types.Strand
+import Data.Info
 
 {-
 
@@ -90,9 +92,22 @@ data FwdPosition
 makeLenses ''FwdPosition
 makePrisms ''FwdPosition
 
+instance NFData FwdPosition
+
+instance Info FwdPosition where
+  info (FwdPosition s x) = printf "%s %d" (show s) (toInt0 x)
+
+-- | Reversing a reversible location means moving the start to the end.
+
+instance Reversing FwdPosition where
+  {-# Inline reversing #-}
+  reversing x = case x^.fwdStrand of
+    PlusStrand    -> set fwdStrand MinusStrand $ x
+    MinusStrand   -> set fwdStrand PlusStrand  $ x
+    UnknownStrand -> x
+
 {-
 
-instance NFData FwdLocation
 
 -- | Combining two FwdLocations yields the sum of their lengths. This assumes
 -- that @x@ and @y@ are next to each other, or that it is ok if the @y@
@@ -133,15 +148,6 @@ fwdLocationDrop k' x =
   in case x^.fwdStrand of
     MinusStrand  -> set fwdLength (l-k) $                            x
     _otherStrand -> set fwdLength (l-k) $ over fwdStart (+. min k l) x
-
--- | Reversing a reversible location means moving the start to the end.
-
-instance Reversing FwdLocation where
-  {-# Inline reversing #-}
-  reversing x = let l = x^.fwdLength;  in case x^.fwdStrand of
-    PlusStrand    -> set fwdStrand MinusStrand $ x
-    MinusStrand   -> set fwdStrand PlusStrand  $ x
-    UnknownStrand -> x
 
 -- -- An isomorphism between a 'Location' and the pair @('FwdLocation',Int)@
 -- -- exists.

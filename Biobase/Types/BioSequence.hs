@@ -103,6 +103,13 @@ deriving newtype instance Reversing (BioSequence w)
 instance IsString (BioSequence Void) where
   fromString = BioSequence . BS.pack
 
+instance Info (BioSequence w) where
+  info (BioSequence s)
+    | BS.length s <= 18 = BS.unpack s
+    | otherwise         = BS.unpack h ++ ".." ++ BS.unpack l
+    where (h,tl) = BS.splitAt 9 s
+          (_,l ) = BS.splitAt (BS.length tl-9) tl
+
 {-
 instance BioSeqLenses (BioSequence w) where
   {-# Inline bsTake #-}
