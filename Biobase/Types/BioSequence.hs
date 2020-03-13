@@ -28,8 +28,7 @@ import           Test.QuickCheck (Arbitrary(..))
 import Data.Coerce
 import Debug.Trace
 
-import           Biobase.Types.Location
-import           Biobase.Types.Strand
+import Biobase.Types.Strand
 import qualified Biobase.Types.Index as BTI
 import Data.Info
 
@@ -37,6 +36,7 @@ import Data.Info
 
 -- * Lens operations on biosequences
 
+{-
 class BioSeqLenses b where
   -- | Lens into the first @k@ characters.
   bsTake :: Int -> Lens' b b
@@ -50,6 +50,7 @@ class BioSeqLenses b where
   bsSplitAt :: Int -> Lens' b (b,b)
   -- | length of this biosequence
   bsLength :: Getter b Int
+-}
 
 -- * Sequence identifiers
 
@@ -102,6 +103,7 @@ deriving newtype instance Reversing (BioSequence w)
 instance IsString (BioSequence Void) where
   fromString = BioSequence . BS.pack
 
+{-
 instance BioSeqLenses (BioSequence w) where
   {-# Inline bsTake #-}
   bsTake k = lens (over _BioSequence (BS.take k)) (\old new -> new <> over _BioSequence (BS.drop k) old)
@@ -115,6 +117,7 @@ instance BioSeqLenses (BioSequence w) where
   bsDropEnd k = lens (over _BioSequence (\s -> BS.take (BS.length s -k) s)) (\old new -> over _BioSequence (\s -> BS.take (BS.length s-k) s) old <> new)
   {-# Inline bsSplitAt #-}
   bsSplitAt k = lens (\b -> (view (bsTake k) b, view (bsDrop k) b)) (\old (h,t) -> h <> t)
+-}
 
 
 
@@ -206,6 +209,8 @@ instance Arbitrary (BioSequence AA) where
 
 
 
+{-
+
 -- * A window into a longer sequence with prefix/suffix information.
 
 -- | Phantom-typed over two types, the type @w@ of the identifier, which can be
@@ -254,13 +259,6 @@ instance (Reversing loc) => Reversing (BioSequenceWindow w ty loc) where
                 & bswSuffix .~ (bsw^.bswPrefix.reversed)
                 & bswInfix  .~ (bsw^.bswInfix.reversed)
                 & bswInfixLocation .~ (bsw^.bswInfixLocation.reversed)
-
-instance BioSeqLenses (BioSequenceWindow w ty FwdLocation) where
-  {-# Inline bsLength #-}
-  bsLength = bswSequence.bsLength
-  -- | Take only @k@ characters from a window, correctly taking into account the
-  -- pfx-seq-sfx, and loc information.
-  bsTake k = undefined -- bswTake
 
 
 
@@ -316,6 +314,7 @@ attachSuffixes k = loop Nothing
         let p' = p & set bswSuffix (view (bswInfix.bsTake k) a)
         in  SI.Step (p' SP.:> loop (Just a) rest)
 
+-}
 
 
 
@@ -424,11 +423,13 @@ instance Complement (BioSequence RNA) where
                    {-# Inline f #-}
                in  iso f f
 
+{-
 instance (Complement (BioSequence ty)) => Complement (BioSequenceWindow w ty k) where
   {-# Inline complement #-}
   complement = let f = over bswPrefix (view complement) . over bswInfix (view complement) . over bswSuffix (view complement)
                    {-# Inline f #-}
                in  iso f f
+-}
 
 reverseComplement :: (Complement f, Reversing f) => Iso' f f
 {-# Inline reverseComplement #-}

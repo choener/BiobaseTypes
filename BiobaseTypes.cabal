@@ -110,6 +110,7 @@ library
     Biobase.Types.Location
     Biobase.Types.Names
     Biobase.Types.Names.Internal
+    Biobase.Types.Position
     Biobase.Types.ReadingFrame
     Biobase.Types.Shape
     Biobase.Types.Strand
