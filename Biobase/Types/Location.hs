@@ -8,6 +8,8 @@ module Biobase.Types.Location where
 import Control.DeepSeq
 import Control.Lens hiding (Index, index)
 import Data.Coerce
+import Data.Data
+import Data.Data.Lens
 import GHC.Generics (Generic)
 import GHC.TypeNats
 import Prelude hiding (length)
@@ -54,7 +56,10 @@ data Location ident posTy seqTy = Location
   , _locPosition    :: !posTy
   , _locSequence    :: !seqTy
   }
+  deriving stock (Show,Data,Typeable,Generic)
 makeLenses ''Location
+
+instance (NFData p, NFData s) => NFData (Location i p s)
 
 retagLocation :: Location i posTy seqTy -> Location j posTy seqTy
 {-# Inline retagLocation #-}
@@ -77,6 +82,23 @@ instance ModifyLocation FwdPosition (BioSequence w) where
   {-# Inline locLength #-}
   locLength = view (locSequence._BioSequence.to BS.length)
 
+instance ModifyLocation FwdPosition Int where
+  {-# Inline locAppendLeft #-}
+  locAppendLeft k' loc = let k = max 0 $ min (loc^.locPosition.fwdStart.to toInt0) k' in
+    loc & locSequence %~ (+ k) & locPosition %~ (\p -> if p^.fwdStrand == PlusStrand then p & fwdStart %~ (-. k) else p)
+  {-# Inline locAppendRight #-}
+  locAppendRight k' loc = let k = max 0 $ min (loc^.locPosition.fwdStart.to toInt0) k' in
+    loc & locSequence %~ (+ k) & locPosition %~ (\p -> if p^.fwdStrand == MinusStrand then p & fwdStart %~ (-. k) else p)
+  {-# Inline locSplitAt #-}
+  locSplitAt k loc =
+    let h' = max 0 . min k $ locLength loc
+        t' = locLength loc - h'
+        h = loc & locSequence .~ h' & locPosition %~ (\p -> if p^.fwdStrand == MinusStrand then p & fwdStart %~(+. t') else p)
+        t = loc & locSequence .~ t' & locPosition %~ (\p -> if p^.fwdStrand == PlusStrand then p & fwdStart %~ (+. h') else p)
+    in  (h,t)
+  {-# Inline locLength #-}
+  locLength = view locSequence
+
 instance Reversing (Location i FwdPosition (BioSequence w)) where
   {-# Inline reversing #-}
   reversing = over (locSequence._BioSequence) BS.reverse . over (locPosition) reversing
@@ -89,11 +111,32 @@ instance Complement (BioSequence w) => Complement (Location i FwdPosition (BioSe
 instance (Info (BioSequence w)) => Info (Location i FwdPosition (BioSequence w)) where
   info loc = printf "%s %s %s" (loc^.locIdentifier^.to show) (show $ loc^.locPosition) (loc^.locSequence.to info)
 
+-- | Will extract a substring for a given biosequence. It is allowed to hand in partially or not at
+-- all overlapping locational information. This will yield empty resulting locations.
+--
+-- This will convert the @FwdPosition@ strand, which in turn allows dealing with reverse-complement
+-- searches.
+--
+-- @
+-- 0123456789
+--    3.3
+-- @
+
+subLocation :: Location i FwdPosition (BioSequence w) -> (FwdPosition, Int) -> Location i FwdPosition (BioSequence w)
+{-# Inline subLocation #-}
+subLocation s (p',l)
+  | ss==PlusStrand = locTake l $ locDrop d s
+  | ss==MinusStrand = locTakeEnd l $ locDropEnd d s
+  where ss = s^.locPosition.fwdStrand
+        p = if ss == p'^.fwdStrand then p' else reversing p'
+        d = delta (s^.locPosition.fwdStart) (p^.fwdStart)
+
 data PIS i p s = PIS
   { _pisPrefix  :: Maybe (Location i p s)
   , _pisInfix   :: !(Location i p s)
   , _pisSuffix  :: Maybe (Location i p s)
   }
+  deriving stock (Show, Data)
 makeLenses ''PIS
 
 pis ifx = PIS Nothing ifx Nothing
@@ -101,9 +144,29 @@ pis ifx = PIS Nothing ifx Nothing
 retagPis :: PIS i p s -> PIS j p s
 retagPis (PIS p i s) = PIS (fmap retagLocation p) (retagLocation i) (fmap retagLocation s)
 
-instance Reversing (PIS i FwdPosition (BioSequence w)) where
+-- | Given a @PIS@, this will return the @substring@ indicated by the location in the 2nd argument.
+-- Allows for easy substring extraction, and retains the system of prefix/infix/suffix.
+--
+-- It is allowed to hand locations that only partially (or not at all) correspond to the @PIS@, but
+-- then the resulting @PIS@ will be empty!
 
-instance Complement (PIS i FwdPosition (BioSequence w)) where
+subPisLocation :: PIS i FwdPosition (BioSequence w) -> (FwdPosition, Int) -> PIS i FwdPosition (BioSequence w)
+{-# Inline subPisLocation #-}
+subPisLocation pis loc =
+  let f z = subLocation z loc
+  in  over (pisPrefix._Just) f . over pisInfix f $ over (pisSuffix._Just) f pis
+
+instance (Reversing (Location i FwdPosition (BioSequence w))) => Reversing (PIS i FwdPosition (BioSequence w)) where
+  {-# Inline reversing #-}
+  reversing pis
+    = over (pisPrefix._Just) reversing . over pisInfix reversing . over (pisSuffix._Just) reversing
+    . set pisPrefix (pis^.pisSuffix) . set pisSuffix (pis^.pisPrefix) $ pis
+
+instance Complement (BioSequence w) => Complement (PIS i FwdPosition (BioSequence w)) where
+  {-# Inline complement #-}
+  complement =
+    let f = over pisInfix (view complement) . over (pisPrefix._Just) (view complement) . over (pisSuffix._Just) (view complement)
+    in  iso f f
 
 pisSequence :: Lens (PIS i p (BioSequence s)) (PIS i p (BioSequence t)) (BioSequence s) (BioSequence t)
 {-# Inline pisSequence #-}

@@ -9,6 +9,7 @@ module Biobase.Types.Position where
 
 import Control.DeepSeq
 import Control.Lens hiding (Index, index)
+import Data.Data
 import GHC.Generics (Generic)
 import GHC.TypeNats
 import Prelude hiding (length)
@@ -88,7 +89,7 @@ data FwdPosition
       , _fwdStart  :: !(Index 0)
       -- ^ Start of the hit on the plus strand
       }
-  deriving (Eq,Ord,Read,Show,Generic)
+  deriving (Eq,Ord,Read,Show,Data,Typeable,Generic)
 makeLenses ''FwdPosition
 makePrisms ''FwdPosition
 

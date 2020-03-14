@@ -72,7 +72,7 @@ unsafePlus i n = Index $ IT.getIndex i + n
 -- | Delta between two 'Index' points.
 
 delta :: forall t . KnownNat t => Index t -> Index t -> Int
-delta i j = abs . IT.getIndex $ i - j
+delta (Index i) (Index j) = abs $ i - j
 {-# Inline delta #-}
 
 toInt ∷ forall t . KnownNat t ⇒ Index t → Int
