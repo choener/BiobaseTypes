@@ -89,6 +89,7 @@ common deps
                     , TypeFamilies
                     , TypeOperators
                     , TupleSections
+                    , UndecidableInstances
                     , UnicodeSyntax
   ghc-options:
     -O2 -funbox-strict-fields
