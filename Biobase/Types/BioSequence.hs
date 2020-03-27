@@ -14,6 +14,7 @@ import           Control.Lens
 import           Data.ByteString.Char8 (ByteString)
 import           Data.Char (ord,chr,toUpper)
 import           Data.Data (Data)
+import           Data.Hashable
 import           Data.Typeable (Typeable)
 import           Data.Void
 import           GHC.Exts (IsString(..))
@@ -87,6 +88,8 @@ newtype BioSequence (which :: k) = BioSequence {_bioSequence :: ByteString}
 makeWrapped ''BioSequence
 makePrisms ''BioSequence
 makeLenses ''BioSequence
+
+instance Hashable (BioSequence (which :: k))
 
 instance NFData (BioSequence w)
 
