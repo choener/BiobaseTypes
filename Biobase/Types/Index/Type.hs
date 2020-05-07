@@ -82,6 +82,10 @@ instance forall t . KnownNat t => PA.Index (Index t) where
   {-# Inline zeroBound' #-}
   totalSize (LtIndex k) = [fromIntegral k]
   {-# Inline totalSize #-}
+  fromLinearIndex _ = Index
+  {-# Inline [0] fromLinearIndex #-}
+  showBound (LtIndex k) = ["LtIndex " ++ show k]
+  showIndex (Index k) = ["Index " ++ show k]
 
 instance (KnownNat t, IndexStream z) ⇒ IndexStream (z:.Index t) where
   streamUp (ls:..LtIndex lf) (hs:..LtIndex ht) = flatten mk step $ streamUp ls hs

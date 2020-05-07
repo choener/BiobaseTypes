@@ -112,6 +112,10 @@ instance Index Strand where
   {-# Inline zeroBound' #-}
   totalSize (LtStrand (Strand k)) = [ fromIntegral (fromEnum k + 1) ]
   {-# Inline totalSize #-}
+  fromLinearIndex _ = Strand
+  {-# Inline [0] fromLinearIndex #-}
+  showBound (LtStrand k) = ["LtStrand " ++ show k]
+  showIndex (Strand k) = ["Strand " ++ show k]
 
 instance IndexStream z => IndexStream (z:.Strand) where
   streamUp (ls:..LtStrand (Strand lf)) (hs:..LtStrand (Strand ht)) = flatten mk step $ streamUp ls hs

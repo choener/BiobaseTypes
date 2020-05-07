@@ -40,7 +40,8 @@ import           Numeric.Limits
 -- Infernal users guide, p.42: log-odds score in log_2 (aka bits).
 
 newtype Bitscore = Bitscore { getBitscore :: Double }
-  deriving (Eq,Ord,Read,Show,Num,Fractional,Generic)
+  deriving stock (Eq,Ord,Read,Show,Generic)
+  deriving newtype (Num,Fractional)
 
 instance Semiring Bitscore where
   plus = (+)
@@ -59,7 +60,7 @@ instance Serialize Bitscore
 instance ToJSON    Bitscore
 instance NFData    Bitscore
 
-deriving instance NumericLimits Bitscore
+deriving newtype instance NumericLimits Bitscore
 
 derivingUnbox "Bitscore"
   [t| Bitscore -> Double |] [| getBitscore |] [| Bitscore |]
