@@ -19,7 +19,7 @@ import           Biobase.Types.Strand
 import           Biobase.Types.Structure
 import           Biobase.Types.Index as I
 
-
+{-
 
 -- * Bitscore conversions
 
@@ -126,4 +126,9 @@ a ~= b = abs (b-a) <= 10e-6
 
 main :: IO ()
 main = $(defaultMainGenerator)
+
+-}
+
+main :: IO ()
+main = return ()
 
