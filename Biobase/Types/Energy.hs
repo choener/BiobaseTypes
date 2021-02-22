@@ -18,6 +18,7 @@ import Data.Serialize (Serialize)
 import Data.Vector.Unboxed.Deriving
 import GHC.Generics
 
+import Algebra.Structure.Semiring
 import Numeric.Discretized
 import Numeric.Limits
 
@@ -61,7 +62,17 @@ newtype DDG = DDG { dDG ∷ Discretized (1 :% 100) }
   deriving (Eq,Ord,Num,Read,Show,Generic,Real,Enum)
 
 derivingUnbox "DDG"
-  [t| DDG → Int |]  [| getDiscretized . dDG |]  [| DDG . Discretized |]
+  [t| DDG -> Int |]  [| getDiscretized . dDG |]  [| DDG . Discretized |]
+
+instance Semiring DDG where
+  plus  (DDG x) (DDG y) = DDG $ min x y
+  times (DDG x) (DDG y) = DDG $ x `plus` y
+  zero = DDG maxFinite
+  one  = DDG zero
+  {-# Inline plus  #-}
+  {-# Inline times #-}
+  {-# Inline zero  #-}
+  {-# Inline one   #-}
 
 --instance Hashable  DeltaDekaGibbs
 --instance Binary    DeltaDekaGibbs
