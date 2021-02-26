@@ -149,11 +149,14 @@ instance IsString (BioSequence RNA) where
 
 instance Arbitrary (BioSequence RNA) where
   arbitrary = do
-    k ← TQ.choose (0,100)
+    k ← TQ.choose (0,10)
     xs ← TQ.vectorOf k $ TQ.elements "ACGU"
     return . BioSequence $ BS.pack xs
-  shrink = view (to shrink)
+  shrink = shrinkBioSequence
 
+shrinkBioSequence (BioSequence b) = fmap BioSequence
+  [ let (l,BS.drop 1 -> r) = BS.splitAt k b
+    in BS.append l r | k <- [0 .. BS.length b -1] ]
 
 
 -- * DNA

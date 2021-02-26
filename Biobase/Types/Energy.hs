@@ -61,6 +61,9 @@ instance Default DG where
 newtype DDG = DDG { dDG ∷ Discretized (1 :% 100) }
   deriving (Eq,Ord,Num,Read,Show,Generic,Real,Enum)
 
+ddg2Int :: DDG -> Int
+ddg2Int (DDG (Discretized e)) = e
+
 derivingUnbox "DDG"
   [t| DDG -> Int |]  [| getDiscretized . dDG |]  [| DDG . Discretized |]
 
