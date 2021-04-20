@@ -59,7 +59,10 @@ instance Default DG where
 -- | Discretized @DG@.
 
 newtype DDG = DDG { dDG ∷ Discretized (1 :% 100) }
-  deriving (Eq,Ord,Num,Read,Show,Generic,Real,Enum)
+  deriving (Eq,Ord,Num,Read,Generic,Real,Enum)
+
+instance Show DDG where
+  show (DDG e) = show e
 
 ddg2Int :: DDG -> Int
 ddg2Int (DDG (Discretized e)) = e
