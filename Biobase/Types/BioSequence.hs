@@ -149,7 +149,7 @@ instance IsString (BioSequence RNA) where
 
 instance Arbitrary (BioSequence RNA) where
   arbitrary = do
-    k ← TQ.choose (0,20)
+    k ← TQ.choose (0,30)
     xs ← TQ.vectorOf k $ TQ.elements "ACGU"
     return . BioSequence $ BS.pack xs
   shrink = shrinkBioSequence
