@@ -91,6 +91,7 @@ common deps
                     , TupleSections
                     , UndecidableInstances
                     , UnicodeSyntax
+                    , ViewPatterns
   ghc-options:
     -O2 -funbox-strict-fields
 
