@@ -1,4 +1,4 @@
-![github action: master](https://github.com/choener/BiobaseTypes/actions/workflows/action.yml/badge.svg)
+![github action: master](https://github.com/choener/BiobaseTypes/actions/workflows/ci.yml/badge.svg)
 
 # BiobaseTypes
 
