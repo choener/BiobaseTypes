@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           BiobaseTypes
-version:        0.2.0.1
+version:        0.2.1.0
 author:         Christian Hoener zu Siederdissen, 2015 - 2021
 copyright:      Christian Hoener zu Siederdissen, 2015 - 2021
 homepage:       https://github.com/choener/BiobaseTypes
