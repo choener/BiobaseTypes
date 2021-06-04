@@ -58,10 +58,10 @@ common deps
                , vector-th-unbox          >= 0.2
                --
                , bimaps                   == 0.1.0.*
-               , DPutils                  == 0.1.0.*
+               , DPutils                  == 0.1.1.*
                , ForestStructures         == 0.0.1.*
                , PrimitiveArray           == 0.10.1.*
-               , SciBaseTypes             == 0.1.0.*
+               , SciBaseTypes             == 0.1.1.*
   default-language:
     Haskell2010
   default-extensions: BangPatterns

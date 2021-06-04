@@ -1,3 +1,9 @@
+0.2.1.0
+-------
+
+- CI/hackage github actions
+- dependency updates
+
 0.2.0.1
 -------
 
